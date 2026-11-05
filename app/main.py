@@ -19,6 +19,8 @@ from app.database.models import (
     CollectionRun,
 )
 
+from app.services.intelligence import run_intelligence
+
 from app.collectors.github import (
     fetch_github_repositories
 )
@@ -258,6 +260,18 @@ def main():
         help="Run collection every day at 8 AM"
     )
 
+    parser.add_argument(
+        "--intelligence",
+        action="store_true",
+        help="Run LLM intelligence processing on pending items"
+    )
+
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Process all pending items (not just one batch)"
+    )
+
     args = parser.parse_args()
 
     create_tables()
@@ -288,6 +302,19 @@ def main():
         )
 
         scheduler.start()
+
+    elif args.intelligence:
+
+        result = run_intelligence(
+            process_all_items=args.all,
+        )
+
+        logger.info(
+            "Intelligence processing complete: %s processed, %s succeeded, %s failed",
+            result["processed"],
+            result["succeeded"],
+            result["failed"],
+        )
 
     else:
 

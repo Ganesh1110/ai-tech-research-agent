@@ -1,3 +1,5 @@
+from typing import Optional
+
 from datetime import datetime, timezone
 
 from sqlalchemy import (
@@ -72,6 +74,72 @@ class ResearchItem(Base):
     metadata_json: Mapped[dict] = mapped_column(
         JSON,
         default=dict
+    )
+
+    processing_status: Mapped[str] = mapped_column(
+        String(50),
+        default="pending",
+        nullable=False,
+    )
+
+    ai_summary: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    ai_category: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    relevance_score: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    technical_value_score: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    novelty_score: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    key_topics: Mapped[Optional[list]] = mapped_column(
+        JSON,
+        nullable=True,
+    )
+
+    technologies: Mapped[Optional[list]] = mapped_column(
+        JSON,
+        nullable=True,
+    )
+
+    implementation_ideas: Mapped[Optional[list]] = mapped_column(
+        JSON,
+        nullable=True,
+    )
+
+    limitations: Mapped[Optional[list]] = mapped_column(
+        JSON,
+        nullable=True,
+    )
+
+    analysis_model: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    analyzed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    processing_error: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
     )
 
 
