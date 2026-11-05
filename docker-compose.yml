@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: tech-research-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tech_research
+      POSTGRES_USER: research_user
+      POSTGRES_PASSWORD: research_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - research_postgres:/var/lib/postgresql
+
+volumes:
+  research_postgres:
