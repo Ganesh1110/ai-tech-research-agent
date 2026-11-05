@@ -68,6 +68,9 @@ ENV/
 # Logs
 logs/
 
+# Local SQLite database
+*.db
+
 # IDE / editor settings
 .idea/
 .vscode/

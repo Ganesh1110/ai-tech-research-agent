@@ -5,7 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.blocking import BlockingScheduler
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import insert
 
 from app.config import settings
 
@@ -121,13 +121,17 @@ def run_collection():
 
         with SessionLocal.begin() as db:
 
-            statement = (
-                insert(ResearchItem)
-                .values(rows)
-                .on_conflict_do_nothing(
+            statement = insert(ResearchItem).values(rows)
+
+            if "sqlite" in settings.DATABASE_URL:
+
+                statement = statement.prefix_with("OR IGNORE")
+
+            else:
+
+                statement = statement.on_conflict_do_nothing(
                     index_elements=["url"]
                 )
-            )
 
             result = db.execute(statement)
 
