@@ -15,7 +15,7 @@ RSS_FEEDS = {
     ],
 
     "agentic-ai": [
-        "https://blog.langchain.com/rss/",
+        "https://www.langchain.com/blog/rss",
     ],
 
     "automation": [
@@ -49,7 +49,7 @@ def fetch_rss_feeds():
 
     results = []
 
-    with httpx.Client(timeout=30) as client:
+    with httpx.Client(timeout=30, follow_redirects=True) as client:
 
         for category, urls in RSS_FEEDS.items():
 
