@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -14,7 +14,10 @@ from app.database.db import (
     create_tables
 )
 
-from app.database.models import ResearchItem
+from app.database.models import (
+    ResearchItem,
+    CollectionRun,
+)
 
 from app.collectors.github import (
     fetch_github_repositories
@@ -47,7 +50,11 @@ def run_collection():
 
     logger.info("Starting research collection")
 
+    start_time = datetime.now(timezone.utc)
+
     all_items = []
+
+    failed_sources = []
 
     collectors = [
         ("GitHub", fetch_github_repositories),
@@ -76,9 +83,22 @@ def run_collection():
                 name
             )
 
+            failed_sources.append(name)
+
+    fetched_count = len(all_items)
+
     if not all_items:
 
         logger.warning("No research items collected")
+
+        _record_collection_run(
+            start_time,
+            fetched_count=0,
+            inserted_count=0,
+            failed_sources=failed_sources,
+            status="completed_no_items"
+        )
+
         return
 
     rows = []
@@ -113,11 +133,22 @@ def run_collection():
 
     if not rows:
         logger.warning("No valid records to save")
+
+        _record_collection_run(
+            start_time,
+            fetched_count=fetched_count,
+            inserted_count=0,
+            failed_sources=failed_sources,
+            status="completed_no_valid_rows"
+        )
+
         return
 
     try:
 
         create_tables()
+
+        inserted = 0
 
         with SessionLocal.begin() as db:
 
@@ -143,10 +174,69 @@ def run_collection():
             inserted
         )
 
+        _record_collection_run(
+            start_time,
+            fetched_count=fetched_count,
+            inserted_count=inserted,
+            failed_sources=failed_sources,
+            status="completed"
+        )
+
     except Exception:
 
         logger.exception(
             "Database storage failed"
+        )
+
+        _record_collection_run(
+            start_time,
+            fetched_count=fetched_count,
+            inserted_count=0,
+            failed_sources=failed_sources + ["database"],
+            status="failed"
+        )
+
+
+def _record_collection_run(
+    started_at: datetime,
+    fetched_count: int,
+    inserted_count: int,
+    failed_sources: list,
+    status: str,
+) -> None:
+
+    finished_at = datetime.now(timezone.utc)
+    duration = (finished_at - started_at).total_seconds()
+
+    try:
+
+        create_tables()
+
+        with SessionLocal.begin() as db:
+
+            db.add(
+                CollectionRun(
+                    started_at=started_at,
+                    finished_at=finished_at,
+                    duration_seconds=duration,
+                    fetched_count=fetched_count,
+                    inserted_count=inserted_count,
+                    failed_sources=failed_sources,
+                    status=status,
+                )
+            )
+
+        logger.info(
+            "Collection run recorded: %s fetched, %s inserted, %s duration",
+            fetched_count,
+            inserted_count,
+            duration,
+        )
+
+    except Exception:
+
+        logger.exception(
+            "Failed to record collection run"
         )
 
 

@@ -14,9 +14,7 @@ RSS_FEEDS = {
         "https://huggingface.co/blog/feed.xml",
     ],
 
-    "agentic-ai": [
-        "https://www.langchain.com/blog/rss",
-    ],
+    "agentic-ai": [],
 
     "automation": [
         "https://blog.n8n.io/rss/",

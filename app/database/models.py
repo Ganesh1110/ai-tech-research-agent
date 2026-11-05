@@ -6,7 +6,9 @@ from sqlalchemy import (
     DateTime,
     JSON,
     UniqueConstraint,
-    Index
+    Index,
+    Integer,
+    DateTime as SQLDateTime,
 )
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -70,4 +72,48 @@ class ResearchItem(Base):
     metadata_json: Mapped[dict] = mapped_column(
         JSON,
         default=dict
+    )
+
+
+class CollectionRun(Base):
+
+    __tablename__ = "collection_runs"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        autoincrement=True
+    )
+
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    duration_seconds: Mapped[float | None] = mapped_column(
+        nullable=True
+    )
+
+    fetched_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0
+    )
+
+    inserted_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0
+    )
+
+    failed_sources: Mapped[list] = mapped_column(
+        JSON,
+        default=list
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(50),
+        default="running"
     )
