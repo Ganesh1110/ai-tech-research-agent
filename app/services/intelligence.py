@@ -12,6 +12,7 @@ from app.llm.ollama_client import OllamaClient
 logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 10
+MAX_RETRIES = 3
 
 
 class IntelligenceProcessor:
@@ -20,10 +21,12 @@ class IntelligenceProcessor:
         self,
         model: Optional[str] = None,
         batch_size: int = BATCH_SIZE,
+        max_retries: int = MAX_RETRIES,
     ):
 
         self.model = model or settings.OLLAMA_MODEL
         self.batch_size = batch_size
+        self.max_retries = max_retries
         self.client = OllamaClient(model=self.model)
 
     def get_pending_items(self, limit: int) -> List[ResearchItem]:
@@ -60,86 +63,38 @@ class IntelligenceProcessor:
     def process_item(self, item: ResearchItem) -> bool:
 
         description = item.description or ""
+        retries = 0
 
-        try:
-
-            item.processing_status = "processing"
-
-            with SessionLocal.begin() as db:
-
-                db.merge(item)
-
-            result = self.client.analyze(
-                title=item.title,
-                source=item.source,
-                category=item.category,
-                published=(
-                    item.published_at.isoformat()
-                    if item.published_at
-                    else None
-                ),
-                description=description,
-                model=self.model,
-            )
-
-            analysis = result.analysis
-
-            with SessionLocal.begin() as db:
-
-                db_item = (
-                    db.query(ResearchItem)
-                    .filter(ResearchItem.id == item.id)
-                    .first()
-                )
-
-                if not db_item:
-
-                    logger.warning(
-                        "Item %s not found in database during update",
-                        item.id,
-                    )
-
-                    return False
-
-                db_item.processing_status = "completed"
-                db_item.ai_summary = analysis.summary
-                db_item.ai_category = analysis.category
-                db_item.relevance_score = analysis.relevance_score
-                db_item.technical_value_score = (
-                    analysis.technical_value_score
-                )
-                db_item.novelty_score = analysis.novelty_score
-                db_item.key_topics = analysis.key_topics
-                db_item.technologies = analysis.technologies
-                db_item.implementation_ideas = (
-                    analysis.implementation_ideas
-                )
-                db_item.limitations = analysis.limitations
-                db_item.analysis_model = result.model_used
-                db_item.analyzed_at = datetime.now(timezone.utc)
-                db_item.processing_error = None
-
-                db.merge(db_item)
-
-            logger.info(
-                "Processed item %s: %s (relevance=%s, value=%s)",
-                item.id,
-                item.title[:60],
-                analysis.relevance_score,
-                analysis.technical_value_score,
-            )
-
-            return True
-
-        except Exception as error:
-
-            logger.exception(
-                "Failed to process item %s: %s",
-                item.id,
-                error,
-            )
+        while retries <= self.max_retries:
 
             try:
+
+                item.processing_status = "processing"
+
+                with SessionLocal.begin() as db:
+
+                    db.merge(item)
+
+                start_time = datetime.now(timezone.utc)
+
+                result = self.client.analyze(
+                    title=item.title,
+                    source=item.source,
+                    category=item.category,
+                    published=(
+                        item.published_at.isoformat()
+                        if item.published_at
+                        else None
+                    ),
+                    description=description,
+                    model=self.model,
+                )
+
+                duration = (
+                    datetime.now(timezone.utc) - start_time
+                ).total_seconds()
+
+                analysis = result.analysis
 
                 with SessionLocal.begin() as db:
 
@@ -149,22 +104,96 @@ class IntelligenceProcessor:
                         .first()
                     )
 
-                    if db_item:
+                    if not db_item:
 
-                        db_item.processing_status = "failed"
-                        db_item.processing_error = str(error)[:1000]
+                        logger.warning(
+                            "Item %s not found in database during update",
+                            item.id,
+                        )
 
-                        db.merge(db_item)
+                        return False
 
-            except Exception as db_error:
+                    db_item.processing_status = "completed"
+                    db_item.ai_summary = analysis.summary
+                    db_item.ai_category = analysis.category
+                    db_item.relevance_score = analysis.relevance_score
+                    db_item.technical_value_score = (
+                        analysis.technical_value_score
+                    )
+                    db_item.novelty_score = analysis.novelty_score
+                    db_item.key_topics = analysis.key_topics
+                    db_item.technologies = analysis.technologies
+                    db_item.implementation_ideas = (
+                        analysis.implementation_ideas
+                    )
+                    db_item.limitations = analysis.limitations
+                    db_item.analysis_model = result.model_used
+                    db_item.analyzed_at = datetime.now(timezone.utc)
+                    db_item.processing_error = None
 
-                logger.exception(
-                    "Failed to record error for item %s: %s",
+                    db.merge(db_item)
+
+                logger.info(
+                    "Processed item %s: %s (relevance=%s, value=%s, duration=%.2fs)",
                     item.id,
-                    db_error,
+                    item.title[:60],
+                    analysis.relevance_score,
+                    analysis.technical_value_score,
+                    duration,
                 )
 
-            return False
+                return True
+
+            except Exception as error:
+
+                retries += 1
+
+                if retries <= self.max_retries:
+
+                    logger.warning(
+                        "Item %s attempt %s/%s failed: %s",
+                        item.id,
+                        retries,
+                        self.max_retries,
+                        error,
+                    )
+
+                    continue
+
+                logger.exception(
+                    "Failed to process item %s after %s retries",
+                    item.id,
+                    self.max_retries,
+                )
+
+                try:
+
+                    with SessionLocal.begin() as db:
+
+                        db_item = (
+                            db.query(ResearchItem)
+                            .filter(ResearchItem.id == item.id)
+                            .first()
+                        )
+
+                        if db_item:
+
+                            db_item.processing_status = "failed"
+                            db_item.processing_error = (
+                                str(error)[:1000]
+                            )
+
+                            db.merge(db_item)
+
+                except Exception as db_error:
+
+                    logger.exception(
+                        "Failed to record error for item %s: %s",
+                        item.id,
+                        db_error,
+                    )
+
+                return False
 
     def process_batch(self, batch_size: Optional[int] = None) -> dict:
 
@@ -242,12 +271,14 @@ class IntelligenceProcessor:
 def run_intelligence(
     model: Optional[str] = None,
     batch_size: Optional[int] = None,
+    max_retries: Optional[int] = None,
     process_all_items: bool = False,
 ) -> dict:
 
     processor = IntelligenceProcessor(
         model=model,
         batch_size=batch_size or BATCH_SIZE,
+        max_retries=max_retries or MAX_RETRIES,
     )
 
     if not processor.client.is_available():

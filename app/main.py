@@ -20,6 +20,7 @@ from app.database.models import (
 )
 
 from app.services.intelligence import run_intelligence
+from app.services.reports import generate_daily_report, format_report_text
 
 from app.collectors.github import (
     fetch_github_repositories
@@ -272,6 +273,12 @@ def main():
         help="Process all pending items (not just one batch)"
     )
 
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        help="Generate daily intelligence report"
+    )
+
     args = parser.parse_args()
 
     create_tables()
@@ -315,6 +322,12 @@ def main():
             result["succeeded"],
             result["failed"],
         )
+
+    elif args.report:
+
+        report = generate_daily_report()
+
+        print(format_report_text(report))
 
     else:
 
