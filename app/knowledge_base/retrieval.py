@@ -4,6 +4,8 @@ Combines lexical BM25 scoring with cosine-similarity vector search
 using Reciprocal Rank Fusion (RRF). Pure Python — no extra dependencies.
 """
 
+from __future__ import annotations
+
 import re
 from collections import Counter
 from math import log

@@ -19,6 +19,7 @@ import { Settings } from "./pages/Settings"
 import { StartupStudio } from "./pages/StartupStudio"
 import { ProductLab } from "./pages/ProductLab"
 import { GrowthCenter } from "./pages/GrowthCenter"
+import { ErrorBoundary } from "./components/common/ErrorBoundary"
 
 import {
   health,
@@ -196,7 +197,8 @@ export default function App() {
 
         {/* Content Body */}
         <main className="content-body">
-          {activeTab === "overview" && (
+          <ErrorBoundary>
+            {activeTab === "overview" && (
             <Overview
               stats={stats}
               schedulerStatus={schedulerStatus}
@@ -285,6 +287,7 @@ export default function App() {
               onRefreshHealth={loadInitialData}
             />
           )}
+          </ErrorBoundary>
         </main>
 
         {/* 3. Bottom Insight Bar */}

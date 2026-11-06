@@ -5,6 +5,8 @@ directed relationships between them. Complements vector search with
 explicit, traversable connections.
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from sqlalchemy.orm import Session

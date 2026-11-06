@@ -12,9 +12,12 @@ Runs a suite of test objectives and scores results on:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 from app.monitoring.metrics import MetricsCollector
+
+if TYPE_CHECKING:
+    from app.agent.agent import AutonomousAgent
 
 
 @dataclass

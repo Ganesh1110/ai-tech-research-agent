@@ -1,8 +1,11 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 import httpx
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 GITHUB_API = "https://api.github.com/search/repositories"
@@ -101,14 +104,13 @@ def fetch_github_repositories():
                         }
                     })
 
-                print(
-                    f"[GITHUB] {category}: "
-                    f"{len(data.get('items', []))} repositories"
+                logger.info(
+                    f"[GITHUB] {category}: {len(data.get('items', []))} repositories"
                 )
 
             except httpx.HTTPError as error:
 
-                print(
+                logger.warning(
                     f"[GITHUB ERROR] {category}: {error}"
                 )
 

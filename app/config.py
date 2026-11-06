@@ -10,7 +10,7 @@ class Settings:
         "AI Tech Research Agent"
     )
 
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./research.db")
 
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 
@@ -38,6 +38,19 @@ class Settings:
         "OLLAMA_MODEL",
         "llama3.1:8b",
     )
+
+    API_KEY = os.getenv("API_KEY", "")
+
+    CORS_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000",
+        ).split(",")
+        if origin.strip()
+    ]
+
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 
 settings = Settings()

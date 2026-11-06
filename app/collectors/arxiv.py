@@ -1,7 +1,10 @@
+import logging
 from datetime import datetime, timezone
 
 import feedparser
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 ARXIV_API = "https://export.arxiv.org/api/query"
@@ -101,14 +104,13 @@ def fetch_arxiv_papers():
                         }
                     })
 
-                print(
-                    f"[ARXIV] {category}: "
-                    f"{len(feed.entries)} papers"
+                logger.info(
+                    f"[ARXIV] {category}: {len(feed.entries)} papers"
                 )
 
             except Exception as error:
 
-                print(
+                logger.warning(
                     f"[ARXIV ERROR] {category}: {error}"
                 )
 

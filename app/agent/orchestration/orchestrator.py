@@ -6,6 +6,8 @@ into shared memory, and synthesizes a unified final answer with
 traceable citations.
 """
 
+from __future__ import annotations
+
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -671,57 +673,30 @@ class Orchestrator:
         return "\n".join(lines)
 
     def _retrieve_kb_context(self, objective: str) -> str:
-
         """Phase 5.6: retrieve prior research context from the KB."""
-
-        from app.knowledge_base.memory_retrieval import MemoryRetriever
-
         try:
-
             with MemoryRetriever() as retriever:
-
                 return retriever.retrieve_context(
-
                     query=objective, top_k=5
-
                 )
-
         except Exception:
-
             return ""
 
     def _store_research_document(
-
         self,
-
         task: AgentTask,
-
         answer: str,
-
         sources: List[SourceRecord],
-
     ) -> None:
-
         """Phase 5.1/5.2: persist a specialist result as a KB document
-
         with text chunks and embeddings for future retrieval.
-
         """
-
         try:
-
-            from app.knowledge_base.storage import KnowledgeBaseStore
-
             title = f"{task.specialist_type.value}: {task.objective[:120]}"
-
             content = answer
-
             if sources:
-
                 content += "\n\n## Sources\n"
-
                 for s in sources:
-
                     content += f"- {s.title} [{s.source}] {s.url}\n"
 
             with KnowledgeBaseStore() as store:

@@ -4,6 +4,8 @@ Tracks latency, tool usage, failures, and source quality across
 autonomous agent runs and research workflows.
 """
 
+from __future__ import annotations
+
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field

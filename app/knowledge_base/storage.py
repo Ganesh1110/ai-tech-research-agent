@@ -5,6 +5,8 @@ database, complementing the existing research_items table as the
 structured source of truth.
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session

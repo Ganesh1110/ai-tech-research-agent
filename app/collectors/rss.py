@@ -1,8 +1,11 @@
+import logging
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
 import feedparser
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 RSS_FEEDS = {
@@ -96,14 +99,13 @@ def fetch_rss_feeds():
                             }
                         })
 
-                    print(
-                        f"[RSS] {category}: "
-                        f"{len(feed.entries)} entries"
+                    logger.info(
+                        f"[RSS] {category}: {len(feed.entries)} entries"
                     )
 
                 except Exception as error:
 
-                    print(
+                    logger.warning(
                         f"[RSS ERROR] {feed_url}: {error}"
                     )
 

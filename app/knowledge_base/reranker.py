@@ -6,8 +6,10 @@ quality signals). A real cross-encoder (e.g. cross-encoder/ms-marco-
 MiniLM-L-6-v2) can be swapped in by subclassing CrossEncoderReranker.
 """
 
+from __future__ import annotations
+
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from app.knowledge_base.retrieval import _tokenize
 
