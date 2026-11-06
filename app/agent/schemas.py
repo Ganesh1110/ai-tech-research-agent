@@ -50,11 +50,19 @@ class ResearchPlan(BaseModel):
     success_criteria: str = ""
 
 
+class SourceRecord(BaseModel):
+    id: Optional[int] = None
+    title: str
+    url: str
+    source: Optional[str] = None
+    relevance_score: Optional[int] = None
+
+
 class AgentResult(BaseModel):
     objective: str
     status: AgentStatus
     steps: List[AgentStep] = Field(default_factory=list)
     final_answer: Optional[str] = None
-    sources: List[str] = Field(default_factory=list)
+    sources: List[SourceRecord] = Field(default_factory=list)
     total_steps: int = 0
     completed_at: Optional[str] = None

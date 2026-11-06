@@ -387,7 +387,15 @@ def main():
 
                 for source in result.sources:
 
-                    print(f"- {source}")
+                    title = getattr(source, "title", source) if not isinstance(source, str) else source
+
+                    url = getattr(source, "url", "") if not isinstance(source, str) else ""
+
+                    print(f"- {title}")
+
+                    if url:
+
+                        print(f"  {url}")
 
     else:
 

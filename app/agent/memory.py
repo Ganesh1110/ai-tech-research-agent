@@ -4,6 +4,67 @@ from typing import Any, Dict, List, Optional
 from app.agent.schemas import AgentStep, ToolResult
 
 
+def _extract_source_records(data: Any) -> List[Dict[str, Any]]:
+
+    records: List[Dict[str, Any]] = []
+
+    if isinstance(data, list):
+
+        for item in data:
+
+            if isinstance(item, dict):
+
+                url = item.get("url")
+
+                if not url:
+
+                    continue
+
+                records.append(
+
+                    {
+
+                        "id": item.get("id"),
+
+                        "title": item.get("title", "Unknown"),
+
+                        "url": url,
+
+                        "source": item.get("source"),
+
+                        "relevance_score": item.get("relevance_score"),
+
+                    }
+
+                )
+
+    elif isinstance(data, dict):
+
+        url = data.get("url")
+
+        if url:
+
+            records.append(
+
+                {
+
+                    "id": data.get("id"),
+
+                    "title": data.get("title", "Unknown"),
+
+                    "url": url,
+
+                    "source": data.get("source"),
+
+                    "relevance_score": data.get("relevance_score"),
+
+                }
+
+            )
+
+    return records
+
+
 class ResearchMemory:
 
     """In-memory research context for a single agent session."""
@@ -13,7 +74,8 @@ class ResearchMemory:
         self.objective = objective
         self.steps: List[AgentStep] = []
         self.findings: List[Dict[str, Any]] = []
-        self.sources: List[str] = []
+        self.sources: List[Dict[str, Any]] = []
+        self._source_urls: set = set()
         self.created_at = datetime.now().isoformat()
 
     def add_step(self, step: AgentStep) -> None:
@@ -24,42 +86,34 @@ class ResearchMemory:
 
         self.findings.append(finding)
 
-        source = finding.get("url") or finding.get("title")
+        data = finding.get("data")
 
-        if not source:
+        for record in _extract_source_records(data):
 
-            data = finding.get("data", [])
+            url = record.get("url")
 
-            if isinstance(data, list):
+            if url and url not in self._source_urls:
 
-                for item in data:
+                self._source_urls.add(url)
 
-                    if isinstance(item, dict):
-
-                        source = item.get("url") or item.get("title")
-
-                        if source:
-
-                            break
-
-            elif isinstance(data, dict):
-
-                source = data.get("url") or data.get("title")
-
-        if source and source not in self.sources:
-
-            self.sources.append(source)
+                self.sources.append(record)
 
     def add_tool_result(self, result: ToolResult) -> None:
 
-        if result.success and result.data:
+        if result.success and result.data is not None:
 
             self.add_finding(
+
                 {
+
                     "tool": result.tool if hasattr(result, "tool") else "unknown",
+
                     "data": result.data,
+
                     "timestamp": datetime.now().isoformat(),
+
                 }
+
             )
 
     def get_context_summary(self) -> str:
@@ -98,11 +152,17 @@ class ResearchMemory:
     def to_dict(self) -> Dict[str, Any]:
 
         return {
+
             "objective": self.objective,
+
             "steps": [step.model_dump() for step in self.steps],
+
             "findings": self.findings,
+
             "sources": self.sources,
+
             "created_at": self.created_at,
+
         }
 
 

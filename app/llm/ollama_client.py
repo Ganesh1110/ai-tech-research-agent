@@ -9,7 +9,7 @@ from app.llm.schemas import IntelligenceResult, ResearchAnalysis
 
 logger = logging.getLogger(__name__)
 
-OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_BASE_URL = settings.OLLAMA_BASE_URL
 DEFAULT_MODEL = "llama3.1:8b"
 
 

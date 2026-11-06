@@ -61,7 +61,10 @@ class AutonomousAgent:
 
         self.model = model or settings.OLLAMA_MODEL
         self.max_steps = max_steps
-        self.client = OllamaClient(model=self.model)
+        self.client = OllamaClient(
+            model=self.model,
+            base_url=settings.OLLAMA_BASE_URL,
+        )
         self.planner = Planner(model=self.model)
         self.tool_registry = TOOL_REGISTRY
 
@@ -364,21 +367,27 @@ class AutonomousAgent:
 
             tool_calls_data = decision.get("tool_calls", [])
 
-            tool_calls = [
+            tool_calls = []
 
-                ToolCall(
+            for tc in tool_calls_data:
 
-                    tool=tc.get("tool", ""),
+                if not isinstance(tc, dict):
 
-                    arguments=tc.get("arguments", {}),
+                    continue
 
-                    reason=tc.get("reason", ""),
+                tool_calls.append(
+
+                    ToolCall(
+
+                        tool=tc.get("tool", ""),
+
+                        arguments=tc.get("arguments", {}),
+
+                        reason=tc.get("reason", ""),
+
+                    )
 
                 )
-
-                for tc in tool_calls_data
-
-            ]
 
             tool_results: List[ToolResult] = []
 
@@ -403,18 +412,6 @@ class AutonomousAgent:
                             }
 
                         )
-
-                        if isinstance(result.data, list):
-
-                            for item in result.data:
-
-                                if isinstance(item, dict):
-
-                                    url = item.get("url")
-
-                                    if url and url not in memory.sources:
-
-                                        memory.sources.append(url)
 
             step = AgentStep(
 
@@ -492,6 +489,12 @@ class AutonomousAgent:
 
             )
 
+        source_index: Dict[str, int] = {}
+
+        for idx, source in enumerate(memory.sources, 1):
+
+            source_index[source["url"]] = idx
+
         lines = [
 
             f"Research Objective: {objective}",
@@ -516,17 +519,21 @@ class AutonomousAgent:
 
                         title = item.get("title", "Unknown")
 
-                        source = item.get("source", "unknown")
+                        source_name = item.get("source", "unknown")
 
                         score = item.get("relevance_score")
 
                         summary = item.get("summary", "")
 
+                        url = item.get("url", "")
+
+                        cite = f" [{source_index.get(url, i)}]" if url else ""
+
                         score_str = f" (relevance: {score}/100)" if score else ""
 
                         lines.append(
 
-                            f"{i}. {title} [{source}]{score_str}"
+                            f"{i}. {title} [{source_name}]{score_str}{cite}"
 
                         )
 
@@ -538,9 +545,13 @@ class AutonomousAgent:
 
                 title = data.get("title", "Unknown")
 
-                source = data.get("source", "unknown")
+                source_name = data.get("source", "unknown")
 
-                lines.append(f"{i}. {title} [{source}]")
+                url = data.get("url", "")
+
+                cite = f" [{source_index.get(url, i)}]" if url else ""
+
+                lines.append(f"{i}. {title} [{source_name}]{cite}")
 
         lines.append("")
 
@@ -548,7 +559,25 @@ class AutonomousAgent:
 
         for source in memory.sources:
 
-            lines.append(f"- {source}")
+            idx = source_index[source["url"]]
+
+            title = source.get("title", "Unknown")
+
+            url = source.get("url", "")
+
+            source_name = source.get("source", "unknown")
+
+            score = source.get("relevance_score")
+
+            score_str = f" (relevance: {score}/100)" if score else ""
+
+            lines.append(
+
+                f"[{idx}] {title} [{source_name}]{score_str}"
+
+            )
+
+            lines.append(f"     {url}")
 
         return "\n".join(lines)
 
