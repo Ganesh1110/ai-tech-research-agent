@@ -456,15 +456,7 @@ class AutonomousAgent:
 
         if not final_answer:
 
-            final_answer = (
-
-                "Research incomplete after "
-
-                f"{self.max_steps} steps. "
-
-                f"Found {len(memory.findings)} findings."
-
-            )
+            final_answer = self._synthesize_findings(objective, memory)
 
         return AgentResult(
 
@@ -483,6 +475,82 @@ class AutonomousAgent:
             completed_at=datetime.now().isoformat(),
 
         )
+
+    def _synthesize_findings(
+        self,
+        objective: str,
+        memory: ResearchMemory,
+    ) -> str:
+
+        """Generate a final answer from collected findings when the loop ends."""
+
+        if not memory.findings:
+
+            return (
+
+                "No relevant research items found in the database for this objective."
+
+            )
+
+        lines = [
+
+            f"Research Objective: {objective}",
+
+            f"Sources consulted: {len(memory.sources)}",
+
+            "",
+
+            "Key Findings:",
+
+        ]
+
+        for i, finding in enumerate(memory.findings[:10], 1):
+
+            data = finding.get("data", {})
+
+            if isinstance(data, list):
+
+                for item in data[:3]:
+
+                    if isinstance(item, dict):
+
+                        title = item.get("title", "Unknown")
+
+                        source = item.get("source", "unknown")
+
+                        score = item.get("relevance_score")
+
+                        summary = item.get("summary", "")
+
+                        score_str = f" (relevance: {score}/100)" if score else ""
+
+                        lines.append(
+
+                            f"{i}. {title} [{source}]{score_str}"
+
+                        )
+
+                        if summary:
+
+                            lines.append(f"   {summary[:200]}")
+
+            elif isinstance(data, dict):
+
+                title = data.get("title", "Unknown")
+
+                source = data.get("source", "unknown")
+
+                lines.append(f"{i}. {title} [{source}]")
+
+        lines.append("")
+
+        lines.append("Sources:")
+
+        for source in memory.sources:
+
+            lines.append(f"- {source}")
+
+        return "\n".join(lines)
 
 
 __all__ = ["AutonomousAgent"]

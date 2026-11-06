@@ -26,6 +26,26 @@ class ResearchMemory:
 
         source = finding.get("url") or finding.get("title")
 
+        if not source:
+
+            data = finding.get("data", [])
+
+            if isinstance(data, list):
+
+                for item in data:
+
+                    if isinstance(item, dict):
+
+                        source = item.get("url") or item.get("title")
+
+                        if source:
+
+                            break
+
+            elif isinstance(data, dict):
+
+                source = data.get("url") or data.get("title")
+
         if source and source not in self.sources:
 
             self.sources.append(source)

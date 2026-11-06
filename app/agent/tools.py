@@ -217,18 +217,24 @@ class DatabaseTools:
     def top_by_score(
         score_field: str = "relevance_score",
         limit: int = 10,
+        category: Optional[str] = None,
     ) -> ToolResult:
 
         try:
 
             with SessionLocal() as db:
 
-                items = (
-                    db.query(ResearchItem)
-                    .filter(
-                        ResearchItem.processing_status == "completed"
+                query = db.query(ResearchItem)
+
+                if category:
+
+                    query = query.filter(
+                        ResearchItem.ai_category.ilike(f"%{category}%")
+                        | ResearchItem.category.ilike(f"%{category}%")
                     )
-                    .order_by(getattr(ResearchItem, score_field).desc())
+
+                items = (
+                    query.order_by(getattr(ResearchItem, score_field).desc())
                     .limit(limit)
                     .all()
                 )
@@ -297,7 +303,7 @@ class ToolRegistry:
             ),
             "top_by_score": (
                 "Get top research items by a score field. "
-                "Arguments: score_field (str, default 'relevance_score'), limit (int, default 10)"
+                "Arguments: score_field (str, default 'relevance_score'), limit (int, default 10), category (str, optional)"
             ),
         }
 

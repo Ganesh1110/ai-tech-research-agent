@@ -6,6 +6,8 @@ from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from sqlalchemy import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from app.config import settings
 
@@ -156,15 +158,13 @@ def run_collection():
 
         with SessionLocal.begin() as db:
 
-            statement = insert(ResearchItem).values(rows)
-
             if "sqlite" in settings.DATABASE_URL:
 
-                statement = statement.prefix_with("OR IGNORE")
+                statement = sqlite_insert(ResearchItem).values(rows).prefix_with("OR IGNORE")
 
             else:
 
-                statement = statement.on_conflict_do_nothing(
+                statement = pg_insert(ResearchItem).values(rows).on_conflict_do_nothing(
                     index_elements=["url"]
                 )
 
