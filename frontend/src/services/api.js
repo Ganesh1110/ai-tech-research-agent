@@ -1,13 +1,16 @@
 const API_BASE = "/api"
 
-// Helper to retrieve configured API key from localStorage or Vite environment
+let onUnauthorizedCallback = null
+
+export function setUnauthorizedHandler(fn) {
+  onUnauthorizedCallback = fn
+}
+
+// Helper to retrieve configured client API key strictly from browser localStorage
+// Secrets are never embedded or prefixed into client build bundles (VITE_ prefix removed)
 export function getStoredApiKey() {
   if (typeof window !== "undefined") {
-    return (
-      window.localStorage?.getItem("research_agent_api_key") ||
-      (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_KEY) ||
-      ""
-    )
+    return window.localStorage?.getItem("research_agent_api_key") || ""
   }
   return ""
 }
@@ -22,9 +25,13 @@ export function setStoredApiKey(key) {
   }
 }
 
-// Helper to handle API responses cleanly
+// Helper to handle API responses cleanly and trigger 401 callback
 async function handleResponse(res) {
   if (!res.ok) {
+    if (res.status === 401 && typeof onUnauthorizedCallback === "function") {
+      onUnauthorizedCallback()
+    }
+
     const errorText = await res.text()
     let errorDetail = `Request failed: ${res.status} ${res.statusText}`
     try {

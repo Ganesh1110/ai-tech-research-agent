@@ -9,6 +9,7 @@ import {
   GithubIcon,
   BlueprintIcon,
   TrophyIcon,
+  StarIcon,
 } from "../components/common/Icons"
 import { Sparkline } from "../components/common/Sparkline"
 import { DonutChart } from "../components/common/DonutChart"

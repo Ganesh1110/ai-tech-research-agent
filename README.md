@@ -96,6 +96,12 @@ cd ..
 
 > **Security:** Never commit real secrets. Do not include actual `GITHUB_TOKEN` or `API_KEY` values in version control.
 
+### Authentication & API Key Flow
+
+- **Local Development (`npm run dev`)**: The Vite proxy automatically reads `API_KEY` from the root `.env` and injects the `X-API-Key` header into `/api` calls. No manual browser configuration is needed.
+- **Production Builds (`npm run build`)**: To prevent secrets from leaking into client-side JS bundles, keys are **never baked into the production bundle**. In production or remote deployments, enter your key once in the dashboard under **Settings > API Authentication**, where it is stored in your browser's `localStorage` and sent with every request.
+- **Unauthorized Handling**: If the server is protected and no key is configured, an interactive alert banner appears with a direct link to the Settings tab.
+
 ## Usage
 
 ### CLI (`app/main.py`)

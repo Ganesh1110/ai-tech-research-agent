@@ -33,10 +33,12 @@ import {
   autonomousProcess,
   kbStats,
   kbDocuments,
+  setUnauthorizedHandler,
 } from "./services/api"
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("overview")
+  const [authRequired, setAuthRequired] = useState(false)
   const [globalSearch, setGlobalSearch] = useState("")
   const [healthData, setHealthData] = useState(null)
   const [schedulerStatus, setSchedulerStatus] = useState({ running: false, interval_seconds: 300, job_counts: {} })
@@ -84,6 +86,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    setUnauthorizedHandler(() => setAuthRequired(true))
     loadInitialData()
   }, [loadInitialData])
 
@@ -197,6 +200,50 @@ export default function App() {
 
         {/* Content Body */}
         <main className="content-body">
+          {authRequired && (
+            <div
+              role="alert"
+              style={{
+                background: "rgba(239, 68, 68, 0.15)",
+                border: "1px solid rgba(239, 68, 68, 0.4)",
+                padding: "10px 18px",
+                borderRadius: 10,
+                marginBottom: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                color: "#fca5a5",
+                fontSize: 13,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🔒</span>
+                <span>
+                  <strong>Authentication Required</strong>: The server rejected requests with 401 Unauthorized. Configure your API key in Settings.
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <button
+                  onClick={() => {
+                    setAuthRequired(false)
+                    setActiveTab("settings")
+                  }}
+                  className="btn btn-primary"
+                  style={{ padding: "4px 12px", fontSize: 12 }}
+                >
+                  Configure in Settings →
+                </button>
+                <button
+                  onClick={() => setAuthRequired(false)}
+                  style={{ background: "transparent", border: "none", color: "#fca5a5", cursor: "pointer", fontSize: 16 }}
+                  aria-label="Dismiss auth alert"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           <ErrorBoundary>
             {activeTab === "overview" && (
             <Overview

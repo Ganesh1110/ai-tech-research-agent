@@ -1,10 +1,17 @@
 import { defineConfig, loadEnv } from "vite"
 import react from "@vitejs/plugin-react"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const repoRoot = path.resolve(__dirname, "..")
 
 export default defineConfig(({ mode }) => {
-  // Load env from current directory or parent directory
-  const env = loadEnv(mode, process.cwd(), "")
-  const apiKey = env.VITE_API_KEY || env.API_KEY || ""
+  // Load env from repository root where .env is stored
+  const rootEnv = loadEnv(mode, repoRoot, "")
+  const localEnv = loadEnv(mode, process.cwd(), "")
+  const apiKey = rootEnv.API_KEY || localEnv.API_KEY || process.env.API_KEY || ""
 
   return {
     plugins: [react()],
