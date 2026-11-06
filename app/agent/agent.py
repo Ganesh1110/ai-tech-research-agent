@@ -608,51 +608,77 @@ class AutonomousAgent:
 
         ]
 
-        for i, finding in enumerate(memory.findings[:10], 1):
+        seen_urls: set = set()
+
+        item_counter = 1
+
+        for finding in memory.findings[:10]:
 
             data = finding.get("data", {})
 
+            items_to_show: List[Dict[str, Any]] = []
+
             if isinstance(data, list):
 
-                for item in data[:3]:
+                for item in data:
 
                     if isinstance(item, dict):
 
-                        title = item.get("title", "Unknown")
-
-                        source_name = item.get("source", "unknown")
-
-                        score = item.get("relevance_score")
-
-                        summary = item.get("summary", "")
-
                         url = item.get("url", "")
 
-                        cite = f" [{source_index.get(url, i)}]" if url else ""
+                        if url and url in seen_urls:
 
-                        score_str = f" (relevance: {score}/100)" if score else ""
+                            continue
 
-                        lines.append(
+                        items_to_show.append(item)
 
-                            f"{i}. {title} [{source_name}]{score_str}{cite}"
+                        if url:
 
-                        )
-
-                        if summary:
-
-                            lines.append(f"   {summary[:200]}")
+                            seen_urls.add(url)
 
             elif isinstance(data, dict):
 
-                title = data.get("title", "Unknown")
-
-                source_name = data.get("source", "unknown")
-
                 url = data.get("url", "")
 
-                cite = f" [{source_index.get(url, i)}]" if url else ""
+                if url and url in seen_urls:
 
-                lines.append(f"{i}. {title} [{source_name}]{cite}")
+                    pass
+
+                else:
+
+                    items_to_show.append(data)
+
+                    if url:
+
+                        seen_urls.add(url)
+
+            for item in items_to_show[:3]:
+
+                title = item.get("title", "Unknown")
+
+                source_name = item.get("source", "unknown")
+
+                score = item.get("relevance_score")
+
+                summary = item.get("summary", "")
+
+                url = item.get("url", "")
+
+                cite = f" [{source_index.get(url, item_counter)}]" if url else ""
+
+                score_str = f" (relevance: {score}/100)" if score else ""
+
+                lines.append(
+
+                    f"{item_counter}. {title} [{source_name}]{score_str}{cite}"
+
+                )
+
+                if summary:
+
+                    lines.append(f"   {summary[:200]}")
+
+                item_counter += 1
 
         lines.append("")
 
