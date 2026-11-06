@@ -19,6 +19,7 @@ from app.database.models import (
     CollectionRun,
 )
 
+from app.agent.agent import AutonomousAgent
 from app.services.intelligence import run_intelligence
 from app.services.reports import generate_daily_report, format_report_text
 
@@ -279,6 +280,19 @@ def main():
         help="Generate daily intelligence report"
     )
 
+    parser.add_argument(
+        "--agent",
+        action="store_true",
+        help="Run autonomous research agent"
+    )
+
+    parser.add_argument(
+        "--objective",
+        type=str,
+        default="",
+        help="Research objective for the autonomous agent"
+    )
+
     args = parser.parse_args()
 
     create_tables()
@@ -328,6 +342,52 @@ def main():
         report = generate_daily_report()
 
         print(format_report_text(report))
+
+    elif args.agent:
+
+        if not args.objective:
+
+            logger.error(
+                "--objective is required with --agent"
+            )
+
+            parser.print_help()
+
+        else:
+
+            agent = AutonomousAgent()
+
+            result = agent.run(objective=args.objective)
+
+            print("\n" + "=" * 60)
+
+            print("AUTONOMOUS RESEARCH AGENT - RESULT")
+
+            print("=" * 60)
+
+            print(f"Objective: {result.objective}")
+
+            print(f"Status: {result.status.value}")
+
+            print(f"Total steps: {result.total_steps}")
+
+            print(f"Sources: {len(result.sources)}")
+
+            print("=" * 60)
+
+            print("\nFINAL ANSWER:\n")
+
+            print(result.final_answer)
+
+            print("\n" + "=" * 60)
+
+            if result.sources:
+
+                print("\nSOURCES:")
+
+                for source in result.sources:
+
+                    print(f"- {source}")
 
     else:
 
