@@ -6,6 +6,7 @@ into shared memory, and synthesizes a unified final answer with
 traceable citations.
 """
 
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -155,6 +156,75 @@ class Orchestrator:
 
         )
 
+    @staticmethod
+    def _clean_answer(answer: str) -> str:
+
+        """Remove leaked prompt/meta-instruction text from a specialist answer."""
+
+        if not answer:
+
+            return ""
+
+        lines = answer.splitlines()
+
+        cleaned: List[str] = []
+
+        skip_until_blank = False
+
+        for line in lines:
+
+            stripped = line.strip()
+
+            if stripped.startswith(
+
+                (
+
+                    "RESEARCH OBJECTIVE:",
+
+                    "SPECIALIST:",
+
+                    "INSTRUCTIONS:",
+
+                    "CONTEXT:",
+
+                )
+
+            ):
+
+                skip_until_blank = True
+
+                continue
+
+            if skip_until_blank:
+
+                if stripped == "":
+
+                    skip_until_blank = False
+
+                continue
+
+            if stripped in (
+
+                "Use the available database tools to gather evidence.",
+
+                "Return findings with source citations.",
+
+            ):
+
+                continue
+
+            if stripped.startswith("Sources:"):
+
+                break
+
+            cleaned.append(line)
+
+        text = "\n".join(cleaned)
+
+        text = re.sub(r"\n{3,}", "\n\n", text)
+
+        return text.strip()
+
     # ---- execution ----------------------------------------------------
 
     def run(
@@ -250,7 +320,7 @@ class Orchestrator:
 
             combined = "\n\n".join(
 
-                f"## Task {r.task_id}\n{r.answer}" for r in st_results if r.answer
+                self._clean_answer(r.answer) for r in st_results if r.answer
 
             )
 
@@ -762,7 +832,7 @@ class Orchestrator:
 
         return chunks
 
-    # ---- synthesis ----------------------------------------------------
+    # ---- synthesis -----------------------------------------------------
 
     def _synthesize(
 
@@ -774,11 +844,27 @@ class Orchestrator:
 
     ) -> str:
 
+        total_tasks = sum(sr.total_tasks for sr in specialist_results)
+
+        completed_tasks = sum(sr.completed_tasks for sr in specialist_results)
+
+        failed_tasks = sum(sr.failed_tasks for sr in specialist_results)
+
+        specialist_names = ", ".join(
+
+            sr.specialist_type.value for sr in specialist_results
+
+        )
+
         lines = [
 
-            f"Multi-Agent Research: {objective}",
+            f"# AI Tech Research — {objective}",
 
-            f"Specialists consulted: {len(specialist_results)}",
+            "",
+
+            f"Specialists consulted: {len(specialist_results)} ({specialist_names})",
+
+            f"Tasks: {total_tasks} total, {completed_tasks} completed, {failed_tasks} failed",
 
             "",
 
@@ -786,15 +872,19 @@ class Orchestrator:
 
         for sr in specialist_results:
 
-            lines.append(f"## {sr.specialist_type.value}")
+            display = sr.specialist_type.value.replace("_", " ").title()
 
-            lines.append(sr.combined_answer)
+            lines.append(f"## {display}")
+
+            if sr.combined_answer:
+
+                lines.append(sr.combined_answer)
 
             lines.append("")
 
-        # Deduplicate sources
+        # Deduplicate sources globally across all specialists.
 
-        seen = set()
+        seen: set = set()
 
         unique: List[SourceRecord] = []
 
@@ -808,23 +898,29 @@ class Orchestrator:
 
                     unique.append(s)
 
-        lines.append("## Sources")
+        if unique:
 
-        for idx, source in enumerate(unique, 1):
+            lines.append(f"## Sources ({len(unique)})")
 
-            title = source.title
+            lines.append("")
 
-            src = source.source or "unknown"
+            for idx, source in enumerate(unique, 1):
 
-            score = source.relevance_score
+                title = source.title
 
-            score_str = f" (relevance: {score}/100)" if score else ""
+                src = source.source or "unknown"
 
-            lines.append(f"[{idx}] {title} [{src}]{score_str}")
+                score = source.relevance_score
 
-            lines.append(f"    {source.url}")
+                score_str = f" (relevance: {score}/100)" if score else ""
 
-        return "\n".join(lines)
+                lines.append(f"[{idx}] {title} [{src}]{score_str}")
+
+                lines.append(f"    {source.url}")
+
+                lines.append("")
+
+        return "\n".join(lines).rstrip() + "\n"
 
 
 __all__ = ["Orchestrator", "OrchestratorResult"]
