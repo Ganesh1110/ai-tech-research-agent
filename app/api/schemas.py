@@ -241,6 +241,134 @@ class CyclesResponse(BaseModel):
     count: int
 
 
+# ---- Founder OS: Startup & Growth Models ----------------------------
+
+class StartupOpportunityResponse(BaseModel):
+    id: int
+    research_item_id: Optional[int] = None
+    title: str
+    tagline: str = ""
+    problem_statement: str
+    proposed_solution: str
+    target_audience: str = ""
+    business_model: str = "B2B SaaS"
+    technical_feasibility: int = 75
+    market_opportunity: int = 75
+    cost_feasibility: int = 80
+    differentiation: int = 70
+    overall_score: int = 75
+    technologies: List[str] = Field(default_factory=list)
+    competitors: List[str] = Field(default_factory=list)
+    mvp_features: List[str] = Field(default_factory=list)
+    status: str = "discovered"
+    notes: Optional[str] = None
+    metadata_json: Dict[str, Any] = Field(default_factory=dict)
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class StartupOpportunityListResponse(BaseModel):
+    items: List[StartupOpportunityResponse]
+    total: int
+
+
+class UpdateOpportunityStatusRequest(BaseModel):
+    status: str
+    notes: Optional[str] = None
+
+
+class WeeklyBriefingResponse(BaseModel):
+    id: int
+    week_identifier: str
+    title: str
+    summary: str
+    top_technologies: List[Dict[str, Any]] = Field(default_factory=list)
+    top_opportunities: List[Dict[str, Any]] = Field(default_factory=list)
+    recommended_mvp: Dict[str, Any] = Field(default_factory=dict)
+    skill_focus: Dict[str, Any] = Field(default_factory=dict)
+    generated_at: Optional[str] = None
+    is_read: bool = False
+    metadata_json: Dict[str, Any] = Field(default_factory=dict)
+
+
+class WeeklyBriefingListResponse(BaseModel):
+    briefings: List[WeeklyBriefingResponse]
+    total: int
+
+
+class ProductBlueprintResponse(BaseModel):
+    id: int
+    opportunity_id: Optional[int] = None
+    name: str
+    tagline: str = ""
+    architecture_summary: str = ""
+    tech_stack: Dict[str, Any] = Field(default_factory=dict)
+    system_components: List[Dict[str, Any]] = Field(default_factory=list)
+    api_spec_outline: List[Dict[str, Any]] = Field(default_factory=list)
+    mvp_roadmap: List[str] = Field(default_factory=list)
+    status: str = "draft"
+    metadata_json: Dict[str, Any] = Field(default_factory=dict)
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class ProductBlueprintListResponse(BaseModel):
+    blueprints: List[ProductBlueprintResponse]
+    total: int
+
+
+class CreateProductBlueprintRequest(BaseModel):
+    opportunity_id: Optional[int] = None
+    name: str
+    tagline: Optional[str] = ""
+    architecture_summary: Optional[str] = ""
+    tech_stack: Optional[Dict[str, Any]] = None
+    mvp_roadmap: Optional[List[str]] = None
+
+
+class FounderProfileResponse(BaseModel):
+    id: int
+    name: str
+    title: str
+    bio: str
+    target_domains: List[str] = Field(default_factory=list)
+    primary_goals: List[str] = Field(default_factory=list)
+    weekly_hours: int = 20
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class UpdateFounderProfileRequest(BaseModel):
+    name: Optional[str] = None
+    title: Optional[str] = None
+    bio: Optional[str] = None
+    target_domains: Optional[List[str]] = None
+    primary_goals: Optional[List[str]] = None
+    weekly_hours: Optional[int] = None
+
+
+class SkillAssessmentResponse(BaseModel):
+    id: int
+    category: str
+    skill_name: str
+    proficiency_level: int
+    target_level: int
+    notes: str = ""
+    actionable_recommendations: List[str] = Field(default_factory=list)
+    last_assessed_at: Optional[str] = None
+
+
+class SkillAssessmentListResponse(BaseModel):
+    skills: List[SkillAssessmentResponse]
+    total: int
+
+
+class UpdateSkillRequest(BaseModel):
+    proficiency_level: Optional[int] = None
+    target_level: Optional[int] = None
+    notes: Optional[str] = None
+
+
 __all__ = [
 
     "AgentRunRequest",
@@ -292,5 +420,31 @@ __all__ = [
     "CycleResponse",
 
     "CyclesResponse",
+
+    "StartupOpportunityResponse",
+
+    "StartupOpportunityListResponse",
+
+    "UpdateOpportunityStatusRequest",
+
+    "WeeklyBriefingResponse",
+
+    "WeeklyBriefingListResponse",
+
+    "ProductBlueprintResponse",
+
+    "ProductBlueprintListResponse",
+
+    "CreateProductBlueprintRequest",
+
+    "FounderProfileResponse",
+
+    "UpdateFounderProfileRequest",
+
+    "SkillAssessmentResponse",
+
+    "SkillAssessmentListResponse",
+
+    "UpdateSkillRequest",
 
 ]

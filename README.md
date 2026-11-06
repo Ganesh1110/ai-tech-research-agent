@@ -1,17 +1,19 @@
-# ai-tech-research-agent
+# Personal AI Founder & Growth OS (ai-tech-research-agent)
 
-A multi-agent AI research platform that discovers, collects, and synthesizes technology research from GitHub, RSS feeds, and arXiv. It coordinates specialist research agents (AI/LLM, Agentic AI, React Native, Developer Tools, Open Source) through an orchestrator, stores findings in a knowledge base, and exposes both a CLI and a FastAPI REST API.
+An autonomous personal AI ecosystem that continuously discovers technology, identifies commercial business opportunities, generates startup concepts, architects product MVPs, and tracks personal technical growth.
 
-## Features
+It combines a **Technology Research Analyst**, **AI Startup Co-Founder**, **Product Architect**, and **Personal Learning Mentor** into one interconnected intelligence loop: **Discover → Think → Build → Learn → Grow**.
 
-- **Multi-agent orchestration** — decomposes a research objective into per-specialist tasks, runs them in parallel or sequentially, and synthesizes a unified final answer with traceable citations.
-- **Specialist agents** — `ai_llm`, `agentic_ai`, `react_native`, `developer_tools`, `open_source`, plus a `general` fallback.
-- **Data collection** — GitHub repositories, RSS feeds, and arXiv papers collectors with deduplication.
-- **Knowledge base** — document/vector storage (SQLite default, PostgreSQL via Docker), hybrid search (BM25 + vector + RRF), embedding coverage tracking.
-- **Workflows** — `technology_discovery` and `framework_comparison` research workflows.
-- **Autonomous mode** — scheduled collection cycles, job queue, discovery manager, recommendation engine.
-- **Evaluation** — built-in test suite to score research quality against expected source counts.
-- **REST API** — FastAPI backend with health, agent, workflow, orchestration, knowledge base, evaluation, and autonomous endpoints.
+## Key Capabilities
+
+- **Startup Opportunity Intelligence** — Automatically scans research discoveries to extract commercial business opportunities with 4-axis scoring (Technical Feasibility, Market Opportunity, Cost Feasibility, Differentiation) and ICP targeting.
+- **Weekly "What Should I Build Next?" Briefing** — Scheduled autonomous synthesis providing 3 technologies to explore, 3 startup ideas to validate, 1 recommended MVP architecture, and 1 high-leverage skill to develop.
+- **AI Product Architect & Builder** — Translates validated startup opportunities into technical blueprints, system topologies, tech stack selections, and MVP implementation epics.
+- **Personal Self-Growth & Skill Matrix** — Tracks competencies across AI/LLM, Agentic AI, Backend Systems, Frontend, and Startup Strategy, dynamically recommending micro-learning exercises to close knowledge gaps.
+- **Multi-Agent Research Orchestration** — Coordinates specialist agents (`ai_llm`, `agentic_ai`, `react_native`, `developer_tools`, `open_source`) with shared context and traceable evidence.
+- **Hybrid Knowledge Base & Vector Store** — Hybrid search (BM25 + vector embeddings + RRF reranking) with entity knowledge graphs.
+- **Autonomous Execution Engine** — Background APScheduler cron jobs, persistent SQLite/PostgreSQL job queue, and worker daemons.
+- **React Cyber-Telemetry Command Center** — High-density dashboard with Command Center, Startup Studio, Product Lab, Growth Center, Tech Radar, and live system telemetry.
 
 ## Project structure
 
@@ -28,13 +30,20 @@ ai-tech-research-agent/
 │   │   └── schemas.py            # Request/response models
 │   ├── collectors/               # GitHub, RSS, arXiv collectors
 │   ├── config.py                 # Settings (env-backed)
+│   ├── data/                     # Tech frameworks directory data
+│   │   └── tech_frameworks.py    # Static + versioned framework registry
 │   ├── database/                 # DB session, models
 │   ├── knowledge_base/           # storage, retrieval, embeddings, reranker
 │   ├── monitoring/               # Evaluator, TestCase
 │   ├── services/                 # intelligence, reports
 │   ├── autonomous/               # scheduler, job queue, worker, discovery
 │   └── main.py                   # CLI entry point
-├── frontend/                     # Frontend application
+├── frontend/                     # React dashboard (Vite)
+│   ├── src/
+│   │   ├── components/common/TechFrameworksDirectory.jsx
+│   │   ├── pages/Trending.jsx
+│   │   └── services/api.js       # fetchFrameworks()
+│   └── package.json
 ├── docker-compose.yml            # PostgreSQL service
 ├── requirements.txt              # Python dependencies
 └── research.db                   # Default SQLite database
@@ -118,6 +127,7 @@ Server runs on `http://localhost:8000` by default.
 | `POST` | `/agent/run` | Run a single autonomous agent |
 | `POST` | `/workflow/run` | Run a workflow (`technology_discovery` / `framework_comparison`) |
 | `POST` | `/orchestrate/run` | Run multi-agent orchestration |
+| `GET` | `/frameworks` | List tech frameworks + categories (Tech Frameworks Directory) |
 | `POST` | `/kb/search` | Search the knowledge base |
 | `GET` | `/kb/stats` | Knowledge base statistics |
 | `GET` | `/kb/documents` | List stored documents |
@@ -146,6 +156,25 @@ Server runs on `http://localhost:8000` by default.
 `ai_llm`, `agentic_ai`, `react_native`, `developer_tools`, `open_source`, `general`
 
 Invalid specialist strings are ignored; valid ones are normalized automatically.
+
+## Tech Frameworks Directory
+
+The directory (`frontend/src/components/common/TechFrameworksDirectory.jsx`) is now **dynamic**: it fetches frameworks from `GET /api/frameworks` at render time instead of relying on hardcoded data. The backend source of truth lives in `app/data/tech_frameworks.py` and can be updated without redeploying the frontend.
+
+When the API is unavailable, the component gracefully falls back to `STATIC_FRAMEWORKS_DATA` and shows a notice.
+
+Available categories: `Agentic AI`, `Local LLM Serving`, `Model Context Protocol`, `Vector & RAG`, `Mobile & React Native`, `Backend & Web`.
+
+### Frontend setup
+
+```bash
+cd frontend
+npm install          # or yarn install
+npm run dev          # Vite dev server (http://localhost:5173)
+npm run build        # production build
+```
+
+The frontend proxies API calls to `http://localhost:8000/api`. Ensure the FastAPI backend is running before using live data.
 
 ## Running with PostgreSQL (Docker)
 

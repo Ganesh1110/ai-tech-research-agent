@@ -12,11 +12,17 @@ import {
   GraphIcon,
   MetricsIcon,
   SettingsIcon,
+  RocketIcon,
+  TrophyIcon,
+  BlueprintIcon,
 } from "../common/Icons"
 import { Sparkline } from "../common/Sparkline"
 
 export const NAV_ITEMS = [
-  { id: "overview", label: "Overview", icon: HomeIcon },
+  { id: "overview", label: "Command Center", icon: HomeIcon },
+  { id: "startup_studio", label: "Startup Studio", icon: RocketIcon },
+  { id: "product_lab", label: "Product Lab", icon: BlueprintIcon },
+  { id: "growth_center", label: "Growth & Skills", icon: TrophyIcon },
   { id: "discoveries", label: "Discoveries", icon: SearchIcon },
   { id: "trending", label: "Tech & Frameworks", icon: FlameIcon },
   { id: "models", label: "AI Models & Data", icon: CubeIcon },

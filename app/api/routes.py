@@ -41,9 +41,30 @@ from app.api.schemas import (
     WorkflowRunResponse,
     FrameworkItem,
     FrameworksResponse,
+    StartupOpportunityResponse,
+    StartupOpportunityListResponse,
+    UpdateOpportunityStatusRequest,
+    WeeklyBriefingResponse,
+    WeeklyBriefingListResponse,
+    ProductBlueprintResponse,
+    ProductBlueprintListResponse,
+    CreateProductBlueprintRequest,
+    FounderProfileResponse,
+    UpdateFounderProfileRequest,
+    SkillAssessmentResponse,
+    SkillAssessmentListResponse,
+    UpdateSkillRequest,
 )
 from app.config import settings
 from app.database.db import SessionLocal
+from app.database.models import (
+    StartupOpportunity,
+    WeeklyBriefing,
+    ProductBlueprint,
+    FounderProfile,
+    SkillAssessment,
+)
+from app.services.startup_intelligence import StartupIntelligenceService
 from app.data.tech_frameworks import list_categories, list_frameworks
 from app.knowledge_base.refresh import KnowledgeRefresher
 from app.knowledge_base.storage import KnowledgeBaseStore
@@ -694,12 +715,344 @@ def autonomous_cycles(limit: int = 20) -> CyclesResponse:
     cycles = coordinator.get_cycle_history(limit=limit)
 
     return CyclesResponse(
-
         cycles=[CycleResponse(**c) for c in cycles],
-
         count=len(cycles),
-
     )
 
 
+# ======================================================================
+# Phase 7 & 8: Founder OS — Startup Intelligence & Growth Endpoints
+# ======================================================================
+
+def _opp_to_response(opp: StartupOpportunity) -> StartupOpportunityResponse:
+    return StartupOpportunityResponse(
+        id=opp.id,
+        research_item_id=opp.research_item_id,
+        title=opp.title,
+        tagline=opp.tagline or "",
+        problem_statement=opp.problem_statement,
+        proposed_solution=opp.proposed_solution,
+        target_audience=opp.target_audience or "",
+        business_model=opp.business_model or "B2B SaaS",
+        technical_feasibility=opp.technical_feasibility,
+        market_opportunity=opp.market_opportunity,
+        cost_feasibility=opp.cost_feasibility,
+        differentiation=opp.differentiation,
+        overall_score=opp.overall_score,
+        technologies=opp.technologies or [],
+        competitors=opp.competitors or [],
+        mvp_features=opp.mvp_features or [],
+        status=opp.status,
+        notes=opp.notes,
+        metadata_json=opp.metadata_json or {},
+        created_at=opp.created_at.isoformat() if opp.created_at else None,
+        updated_at=opp.updated_at.isoformat() if opp.updated_at else None,
+    )
+
+
+def _briefing_to_response(b: WeeklyBriefing) -> WeeklyBriefingResponse:
+    return WeeklyBriefingResponse(
+        id=b.id,
+        week_identifier=b.week_identifier,
+        title=b.title,
+        summary=b.summary,
+        top_technologies=b.top_technologies or [],
+        top_opportunities=b.top_opportunities or [],
+        recommended_mvp=b.recommended_mvp or {},
+        skill_focus=b.skill_focus or {},
+        generated_at=b.generated_at.isoformat() if b.generated_at else None,
+        is_read=b.is_read,
+        metadata_json=b.metadata_json or {},
+    )
+
+
+def _blueprint_to_response(bp: ProductBlueprint) -> ProductBlueprintResponse:
+    return ProductBlueprintResponse(
+        id=bp.id,
+        opportunity_id=bp.opportunity_id,
+        name=bp.name,
+        tagline=bp.tagline or "",
+        architecture_summary=bp.architecture_summary or "",
+        tech_stack=bp.tech_stack or {},
+        system_components=bp.system_components or [],
+        api_spec_outline=bp.api_spec_outline or [],
+        mvp_roadmap=bp.mvp_roadmap or [],
+        status=bp.status,
+        metadata_json=bp.metadata_json or {},
+        created_at=bp.created_at.isoformat() if bp.created_at else None,
+        updated_at=bp.updated_at.isoformat() if bp.updated_at else None,
+    )
+
+
+# ---- Startup Opportunities -------------------------------------------
+
+@router.get("/startup/opportunities", response_model=StartupOpportunityListResponse)
+def get_startup_opportunities(
+    status: Optional[str] = None,
+    min_score: int = 0,
+    limit: int = 50,
+) -> StartupOpportunityListResponse:
+    with SessionLocal() as db:
+        query = db.query(StartupOpportunity)
+        if status:
+            query = query.filter(StartupOpportunity.status == status)
+        if min_score > 0:
+            query = query.filter(StartupOpportunity.overall_score >= min_score)
+        
+        opps = query.order_by(StartupOpportunity.overall_score.desc()).limit(limit).all()
+        return StartupOpportunityListResponse(
+            items=[_opp_to_response(o) for o in opps],
+            total=len(opps),
+        )
+
+
+@router.post("/startup/opportunities/scan", response_model=StartupOpportunityListResponse)
+def scan_startup_opportunities(
+    limit: int = 10,
+    min_score: int = 65,
+) -> StartupOpportunityListResponse:
+    with SessionLocal() as db:
+        service = StartupIntelligenceService()
+        opps = service.scan_research_for_opportunities(db, limit=limit, min_score=min_score)
+        return StartupOpportunityListResponse(
+            items=[_opp_to_response(o) for o in opps],
+            total=len(opps),
+        )
+
+
+@router.get("/startup/opportunities/{opp_id}", response_model=StartupOpportunityResponse)
+def get_startup_opportunity(opp_id: int) -> StartupOpportunityResponse:
+    with SessionLocal() as db:
+        opp = db.query(StartupOpportunity).filter(StartupOpportunity.id == opp_id).first()
+        if not opp:
+            raise HTTPException(status_code=404, detail="Startup opportunity not found")
+        return _opp_to_response(opp)
+
+
+@router.patch("/startup/opportunities/{opp_id}/status", response_model=StartupOpportunityResponse)
+def update_startup_opportunity_status(
+    opp_id: int,
+    req: UpdateOpportunityStatusRequest,
+) -> StartupOpportunityResponse:
+    with SessionLocal() as db:
+        opp = db.query(StartupOpportunity).filter(StartupOpportunity.id == opp_id).first()
+        if not opp:
+            raise HTTPException(status_code=404, detail="Startup opportunity not found")
+        opp.status = req.status
+        if req.notes is not None:
+            opp.notes = req.notes
+        db.commit()
+        db.refresh(opp)
+        return _opp_to_response(opp)
+
+
+# ---- Weekly Briefings ------------------------------------------------
+
+@router.get("/startup/briefings", response_model=WeeklyBriefingListResponse)
+def get_weekly_briefings(limit: int = 10) -> WeeklyBriefingListResponse:
+    with SessionLocal() as db:
+        briefings = (
+            db.query(WeeklyBriefing)
+            .order_by(WeeklyBriefing.generated_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return WeeklyBriefingListResponse(
+            briefings=[_briefing_to_response(b) for b in briefings],
+            total=len(briefings),
+        )
+
+
+@router.get("/startup/briefings/latest", response_model=Optional[WeeklyBriefingResponse])
+def get_latest_weekly_briefing() -> Optional[WeeklyBriefingResponse]:
+    with SessionLocal() as db:
+        briefing = (
+            db.query(WeeklyBriefing)
+            .order_by(WeeklyBriefing.generated_at.desc())
+            .first()
+        )
+        if not briefing:
+            # Generate automatically if none exists yet
+            service = StartupIntelligenceService()
+            service.seed_initial_founder_data(db)
+            briefing = service.generate_weekly_briefing(db)
+        return _briefing_to_response(briefing)
+
+
+@router.post("/startup/briefings/generate", response_model=WeeklyBriefingResponse)
+def generate_weekly_briefing(force_new: bool = True) -> WeeklyBriefingResponse:
+    with SessionLocal() as db:
+        service = StartupIntelligenceService()
+        service.seed_initial_founder_data(db)
+        briefing = service.generate_weekly_briefing(db, force_new=force_new)
+        return _briefing_to_response(briefing)
+
+
+# ---- Product Blueprints ---------------------------------------------
+
+@router.get("/product/blueprints", response_model=ProductBlueprintListResponse)
+def get_product_blueprints(limit: int = 20) -> ProductBlueprintListResponse:
+    with SessionLocal() as db:
+        blueprints = (
+            db.query(ProductBlueprint)
+            .order_by(ProductBlueprint.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return ProductBlueprintListResponse(
+            blueprints=[_blueprint_to_response(bp) for bp in blueprints],
+            total=len(blueprints),
+        )
+
+
+@router.post("/product/blueprints", response_model=ProductBlueprintResponse)
+def create_product_blueprint(req: CreateProductBlueprintRequest) -> ProductBlueprintResponse:
+    with SessionLocal() as db:
+        bp = ProductBlueprint(
+            opportunity_id=req.opportunity_id,
+            name=req.name,
+            tagline=req.tagline or "",
+            architecture_summary=req.architecture_summary or "",
+            tech_stack=req.tech_stack or {
+                "frontend": "React + Vite",
+                "backend": "FastAPI",
+                "database": "PostgreSQL",
+                "ai": "Ollama / local LLM",
+            },
+            mvp_roadmap=req.mvp_roadmap or [
+                "1. Database schema and core data pipeline",
+                "2. REST API endpoints and validation",
+                "3. Frontend UI interactive prototype",
+                "4. Evaluation test suite and deployment",
+            ],
+            status="draft",
+        )
+        db.add(bp)
+        db.commit()
+        db.refresh(bp)
+        return _blueprint_to_response(bp)
+
+
+@router.get("/product/blueprints/{blueprint_id}", response_model=ProductBlueprintResponse)
+def get_product_blueprint(blueprint_id: int) -> ProductBlueprintResponse:
+    with SessionLocal() as db:
+        bp = db.query(ProductBlueprint).filter(ProductBlueprint.id == blueprint_id).first()
+        if not bp:
+            raise HTTPException(status_code=404, detail="Product blueprint not found")
+        return _blueprint_to_response(bp)
+
+
+# ---- Founder Profile & Growth Intelligence --------------------------
+
+@router.get("/growth/profile", response_model=FounderProfileResponse)
+def get_founder_profile() -> FounderProfileResponse:
+    with SessionLocal() as db:
+        service = StartupIntelligenceService()
+        service.seed_initial_founder_data(db)
+        profile = db.query(FounderProfile).first()
+        return FounderProfileResponse(
+            id=profile.id,
+            name=profile.name,
+            title=profile.title,
+            bio=profile.bio,
+            target_domains=profile.target_domains or [],
+            primary_goals=profile.primary_goals or [],
+            weekly_hours=profile.weekly_hours,
+            created_at=profile.created_at.isoformat() if profile.created_at else None,
+            updated_at=profile.updated_at.isoformat() if profile.updated_at else None,
+        )
+
+
+@router.put("/growth/profile", response_model=FounderProfileResponse)
+def update_founder_profile(req: UpdateFounderProfileRequest) -> FounderProfileResponse:
+    with SessionLocal() as db:
+        profile = db.query(FounderProfile).first()
+        if not profile:
+            profile = FounderProfile()
+            db.add(profile)
+        
+        if req.name is not None:
+            profile.name = req.name
+        if req.title is not None:
+            profile.title = req.title
+        if req.bio is not None:
+            profile.bio = req.bio
+        if req.target_domains is not None:
+            profile.target_domains = req.target_domains
+        if req.primary_goals is not None:
+            profile.primary_goals = req.primary_goals
+        if req.weekly_hours is not None:
+            profile.weekly_hours = req.weekly_hours
+        
+        db.commit()
+        db.refresh(profile)
+        return FounderProfileResponse(
+            id=profile.id,
+            name=profile.name,
+            title=profile.title,
+            bio=profile.bio,
+            target_domains=profile.target_domains or [],
+            primary_goals=profile.primary_goals or [],
+            weekly_hours=profile.weekly_hours,
+            created_at=profile.created_at.isoformat() if profile.created_at else None,
+            updated_at=profile.updated_at.isoformat() if profile.updated_at else None,
+        )
+
+
+@router.get("/growth/skills", response_model=SkillAssessmentListResponse)
+def get_skill_matrix() -> SkillAssessmentListResponse:
+    with SessionLocal() as db:
+        service = StartupIntelligenceService()
+        service.seed_initial_founder_data(db)
+        skills = db.query(SkillAssessment).order_by(SkillAssessment.category, SkillAssessment.proficiency_level.desc()).all()
+        return SkillAssessmentListResponse(
+            skills=[
+                SkillAssessmentResponse(
+                    id=s.id,
+                    category=s.category,
+                    skill_name=s.skill_name,
+                    proficiency_level=s.proficiency_level,
+                    target_level=s.target_level,
+                    notes=s.notes or "",
+                    actionable_recommendations=s.actionable_recommendations or [],
+                    last_assessed_at=s.last_assessed_at.isoformat() if s.last_assessed_at else None,
+                )
+                for s in skills
+            ],
+            total=len(skills),
+        )
+
+
+@router.patch("/growth/skills/{skill_id}", response_model=SkillAssessmentResponse)
+def update_skill_assessment(
+    skill_id: int,
+    req: UpdateSkillRequest,
+) -> SkillAssessmentResponse:
+    with SessionLocal() as db:
+        skill = db.query(SkillAssessment).filter(SkillAssessment.id == skill_id).first()
+        if not skill:
+            raise HTTPException(status_code=404, detail="Skill assessment not found")
+        
+        if req.proficiency_level is not None:
+            skill.proficiency_level = req.proficiency_level
+        if req.target_level is not None:
+            skill.target_level = req.target_level
+        if req.notes is not None:
+            skill.notes = req.notes
+        
+        db.commit()
+        db.refresh(skill)
+        return SkillAssessmentResponse(
+            id=skill.id,
+            category=skill.category,
+            skill_name=skill.skill_name,
+            proficiency_level=skill.proficiency_level,
+            target_level=skill.target_level,
+            notes=skill.notes or "",
+            actionable_recommendations=skill.actionable_recommendations or [],
+            last_assessed_at=skill.last_assessed_at.isoformat() if skill.last_assessed_at else None,
+        )
+
+
 __all__ = ["router"]
+

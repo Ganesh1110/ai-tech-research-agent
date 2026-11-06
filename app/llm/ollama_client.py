@@ -123,3 +123,33 @@ class OllamaClient:
             model_used=model_name,
             processed_at=data.get("created_at", ""),
         )
+
+    def generate_json(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        model: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Generate structured JSON directly using Ollama."""
+        model_name = model or self.model
+        sys = system_prompt or "You are an expert AI startup strategist and technical architect. Return ONLY valid JSON."
+        payload: Dict[str, Any] = {
+            "model": model_name,
+            "messages": [
+                {"role": "system", "content": sys},
+                {"role": "user", "content": prompt},
+            ],
+            "stream": False,
+            "format": "json",
+        }
+
+        with httpx.Client(timeout=self.timeout) as client:
+            response = client.post(f"{self.base_url}/api/chat", json=payload)
+            response.raise_for_status()
+            data = response.json()
+
+        content = data.get("message", {}).get("content", "").strip()
+        if not content:
+            raise ValueError("Empty response from Ollama")
+
+        return json.loads(content)

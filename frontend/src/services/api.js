@@ -142,3 +142,90 @@ export async function fetchFrameworks() {
   return handleResponse(res)
 }
 
+// Founder OS: Startup Intelligence, Briefings & Growth
+export async function getStartupOpportunities(params = {}) {
+  const query = new URLSearchParams()
+  if (params.status) query.append("status", params.status)
+  if (params.min_score) query.append("min_score", params.min_score)
+  if (params.limit) query.append("limit", params.limit)
+  const qs = query.toString() ? `?${query.toString()}` : ""
+  const res = await fetch(`${API_BASE}/startup/opportunities${qs}`)
+  return handleResponse(res)
+}
+
+export async function scanStartupOpportunities(limit = 10, minScore = 65) {
+  const res = await fetch(`${API_BASE}/startup/opportunities/scan?limit=${limit}&min_score=${minScore}`, {
+    method: "POST",
+  })
+  return handleResponse(res)
+}
+
+export async function updateOpportunityStatus(oppId, status, notes = null) {
+  const res = await fetch(`${API_BASE}/startup/opportunities/${oppId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, notes }),
+  })
+  return handleResponse(res)
+}
+
+export async function getWeeklyBriefings(limit = 10) {
+  const res = await fetch(`${API_BASE}/startup/briefings?limit=${limit}`)
+  return handleResponse(res)
+}
+
+export async function getLatestWeeklyBriefing() {
+  const res = await fetch(`${API_BASE}/startup/briefings/latest`)
+  return handleResponse(res)
+}
+
+export async function generateWeeklyBriefing(forceNew = true) {
+  const res = await fetch(`${API_BASE}/startup/briefings/generate?force_new=${forceNew}`, {
+    method: "POST",
+  })
+  return handleResponse(res)
+}
+
+export async function getProductBlueprints(limit = 20) {
+  const res = await fetch(`${API_BASE}/product/blueprints?limit=${limit}`)
+  return handleResponse(res)
+}
+
+export async function createProductBlueprint(blueprintData) {
+  const res = await fetch(`${API_BASE}/product/blueprints`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(blueprintData),
+  })
+  return handleResponse(res)
+}
+
+export async function getFounderProfile() {
+  const res = await fetch(`${API_BASE}/growth/profile`)
+  return handleResponse(res)
+}
+
+export async function updateFounderProfile(profileData) {
+  const res = await fetch(`${API_BASE}/growth/profile`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profileData),
+  })
+  return handleResponse(res)
+}
+
+export async function getSkillMatrix() {
+  const res = await fetch(`${API_BASE}/growth/skills`)
+  return handleResponse(res)
+}
+
+export async function updateSkill(skillId, skillData) {
+  const res = await fetch(`${API_BASE}/growth/skills/${skillId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(skillData),
+  })
+  return handleResponse(res)
+}
+
+

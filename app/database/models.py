@@ -11,6 +11,8 @@ from sqlalchemy import (
     Index,
     Integer,
     ForeignKey,
+    Boolean,
+    Float,
 )
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -525,6 +527,222 @@ class SourceCheck(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
+class StartupOpportunity(Base):
+
+    """Identified startup and business opportunities derived from technology research."""
+
+    __tablename__ = "startup_opportunities"
+
+    __table_args__ = (
+        Index("idx_startup_opp_status", "status"),
+        Index("idx_startup_opp_score", "overall_score"),
+        Index("idx_startup_opp_created", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    research_item_id: Mapped[int | None] = mapped_column(
+        ForeignKey("research_items.id"),
+        nullable=True,
+    )
+
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+
+    tagline: Mapped[str] = mapped_column(String(500), default="")
+
+    problem_statement: Mapped[str] = mapped_column(Text, nullable=False)
+
+    proposed_solution: Mapped[str] = mapped_column(Text, nullable=False)
+
+    target_audience: Mapped[str] = mapped_column(String(500), default="")
+
+    business_model: Mapped[str] = mapped_column(String(255), default="B2B SaaS")
+
+    technical_feasibility: Mapped[int] = mapped_column(Integer, default=75)
+
+    market_opportunity: Mapped[int] = mapped_column(Integer, default=75)
+
+    cost_feasibility: Mapped[int] = mapped_column(Integer, default=80)
+
+    differentiation: Mapped[int] = mapped_column(Integer, default=70)
+
+    overall_score: Mapped[int] = mapped_column(Integer, default=75)
+
+    technologies: Mapped[list] = mapped_column(JSON, default=list)
+
+    competitors: Mapped[list] = mapped_column(JSON, default=list)
+
+    mvp_features: Mapped[list] = mapped_column(JSON, default=list)
+
+    status: Mapped[str] = mapped_column(
+        String(50),
+        default="discovered",
+        nullable=False,
+    )
+
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class WeeklyBriefing(Base):
+
+    """Weekly synthesis: 3 Tech, 3 Opportunities, 1 MVP Blueprint, 1 Skill focus."""
+
+    __tablename__ = "weekly_briefings"
+
+    __table_args__ = (
+        Index("idx_weekly_briefing_week", "week_identifier"),
+        Index("idx_weekly_briefing_created", "generated_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    week_identifier: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+
+    top_technologies: Mapped[list] = mapped_column(JSON, default=list)
+
+    top_opportunities: Mapped[list] = mapped_column(JSON, default=list)
+
+    recommended_mvp: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    skill_focus: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    generated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+class ProductBlueprint(Base):
+
+    """Executable MVP blueprints generated for startup opportunities."""
+
+    __tablename__ = "product_blueprints"
+
+    __table_args__ = (
+        Index("idx_blueprint_status", "status"),
+        Index("idx_blueprint_created", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    opportunity_id: Mapped[int | None] = mapped_column(
+        ForeignKey("startup_opportunities.id"),
+        nullable=True,
+    )
+
+    name: Mapped[str] = mapped_column(String(500), nullable=False)
+
+    tagline: Mapped[str] = mapped_column(String(500), default="")
+
+    architecture_summary: Mapped[str] = mapped_column(Text, default="")
+
+    tech_stack: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    system_components: Mapped[list] = mapped_column(JSON, default=list)
+
+    api_spec_outline: Mapped[list] = mapped_column(JSON, default=list)
+
+    mvp_roadmap: Mapped[list] = mapped_column(JSON, default=list)
+
+    status: Mapped[str] = mapped_column(String(50), default="draft")
+
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class FounderProfile(Base):
+
+    """Personal founder settings, core preferences, and focus domains."""
+
+    __tablename__ = "founder_profiles"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    name: Mapped[str] = mapped_column(String(100), default="Founder")
+
+    title: Mapped[str] = mapped_column(String(200), default="AI Engineer & Founder")
+
+    bio: Mapped[str] = mapped_column(Text, default="")
+
+    target_domains: Mapped[list] = mapped_column(JSON, default=list)
+
+    primary_goals: Mapped[list] = mapped_column(JSON, default=list)
+
+    weekly_hours: Mapped[int] = mapped_column(Integer, default=20)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class SkillAssessment(Base):
+
+    """Founder personal skill matrix and learning paths."""
+
+    __tablename__ = "skill_assessments"
+
+    __table_args__ = (
+        Index("idx_skill_category", "category"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    category: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    skill_name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    proficiency_level: Mapped[int] = mapped_column(Integer, default=50)
+
+    target_level: Mapped[int] = mapped_column(Integer, default=85)
+
+    notes: Mapped[str] = mapped_column(Text, default="")
+
+    actionable_recommendations: Mapped[list] = mapped_column(JSON, default=list)
+
+    last_assessed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+
 __all__ = [
 
     "ResearchItem",
@@ -548,5 +766,15 @@ __all__ = [
     "FeasibilityReport",
 
     "SourceCheck",
+
+    "StartupOpportunity",
+
+    "WeeklyBriefing",
+
+    "ProductBlueprint",
+
+    "FounderProfile",
+
+    "SkillAssessment",
 
 ]

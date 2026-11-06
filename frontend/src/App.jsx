@@ -16,6 +16,9 @@ import { Feasibility } from "./pages/Feasibility"
 import { KnowledgeGraph } from "./pages/KnowledgeGraph"
 import { ActivityMetrics } from "./pages/ActivityMetrics"
 import { Settings } from "./pages/Settings"
+import { StartupStudio } from "./pages/StartupStudio"
+import { ProductLab } from "./pages/ProductLab"
+import { GrowthCenter } from "./pages/GrowthCenter"
 
 import {
   health,
@@ -207,6 +210,27 @@ export default function App() {
               isProcessing={isProcessing}
             />
           )}
+
+          {activeTab === "startup_studio" && (
+            <StartupStudio
+              onNavigateToBrainstorm={(prompt) => {
+                setBrainstormPrompt(prompt)
+                setActiveTab("brainstorming")
+              }}
+              onNavigateToProductLab={() => setActiveTab("product_lab")}
+            />
+          )}
+
+          {activeTab === "product_lab" && (
+            <ProductLab
+              onNavigateToBrainstorm={(prompt) => {
+                setBrainstormPrompt(prompt)
+                setActiveTab("brainstorming")
+              }}
+            />
+          )}
+
+          {activeTab === "growth_center" && <GrowthCenter />}
 
           {activeTab === "discoveries" && (
             <Discoveries

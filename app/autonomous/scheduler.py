@@ -10,9 +10,11 @@ from typing import Any, Callable, Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 
 from app.autonomous.job_queue import JobQueue
 from app.autonomous.coordinator import DiscoveryCoordinator
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -51,21 +53,24 @@ class AutonomousScheduler:
             return
 
         self.scheduler.add_job(
-
             self._run_discovery_cycle,
-
             trigger=IntervalTrigger(seconds=self.interval_seconds),
-
             id="discovery_cycle",
-
             name="Autonomous discovery cycle",
-
             replace_existing=True,
-
             max_instances=1,  # prevent overlapping cycles
-
             coalesce=True,  # if a cycle is missed, run once not multiple times
+        )
 
+        # Weekly Founder Briefing every Monday at 08:00
+        self.scheduler.add_job(
+            self._run_weekly_briefing_cycle,
+            trigger=CronTrigger(day_of_week="mon", hour=8, minute=0, timezone=settings.TIMEZONE),
+            id="weekly_startup_briefing",
+            name="Weekly Startup Opportunity Briefing",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
         )
 
         self.scheduler.start()
@@ -115,6 +120,21 @@ class AutonomousScheduler:
             logger.exception("Discovery cycle %s failed to enqueue jobs", cycle.id)
 
             self.coordinator.finish_cycle(cycle.id, status="failed")
+
+    def _run_weekly_briefing_cycle(self) -> None:
+        """Run weekly startup intelligence scan and briefing synthesis."""
+        logger.info("Executing scheduled weekly startup opportunity briefing synthesis")
+        try:
+            from app.database.db import SessionLocal
+            from app.services.startup_intelligence import StartupIntelligenceService
+
+            with SessionLocal() as db:
+                service = StartupIntelligenceService()
+                service.scan_research_for_opportunities(db, limit=10, min_score=65)
+                briefing = service.generate_weekly_briefing(db, force_new=True)
+                logger.info(f"Weekly briefing successfully synthesized: {briefing.title}")
+        except Exception:
+            logger.exception("Failed to execute scheduled weekly startup opportunity briefing")
 
     def is_running(self) -> bool:
 
