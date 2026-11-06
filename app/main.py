@@ -26,6 +26,7 @@ from app.agent.workflows import (
     TechnologyDiscoveryWorkflow,
     FrameworkComparisonWorkflow,
 )
+from app.agent.orchestration import Orchestrator
 from app.monitoring import Evaluator, TestCase
 from app.services.intelligence import run_intelligence
 from app.services.reports import generate_daily_report, format_report_text
@@ -316,6 +317,19 @@ def main():
         "--evaluate",
         action="store_true",
         help="Run evaluation suite and print reliability report"
+    )
+
+    parser.add_argument(
+        "--orchestrate",
+        action="store_true",
+        help="Run multi-agent orchestrator with specialist agents"
+    )
+
+    parser.add_argument(
+        "--specialists",
+        type=str,
+        default="",
+        help="Comma-separated specialist types (ai_llm, agentic_ai, react_native, developer_tools, open_source)"
     )
 
     args = parser.parse_args()
@@ -707,6 +721,160 @@ def main():
         results = evaluator.run_suite(cases)
 
         print(evaluator.report(results))
+
+    elif args.orchestrate:
+
+        if not args.objective:
+
+            logger.error(
+
+                "--objective is required with --orchestrate"
+
+            )
+
+            parser.print_help()
+
+        else:
+
+            specialist_types = None
+
+            if args.specialists:
+
+                type_map = {
+
+                    "ai_llm": "ai_llm",
+
+                    "agentic_ai": "agentic_ai",
+
+                    "react_native": "react_native",
+
+                    "developer_tools": "developer_tools",
+
+                    "open_source": "open_source",
+
+                }
+
+                requested = [
+
+                    s.strip()
+
+                    for s in args.specialists.split(",")
+
+                    if s.strip()
+
+                ]
+
+                specialist_types = [
+
+                    type_map[s]
+
+                    for s in requested
+
+                    if s in type_map
+
+                ]
+
+                if not specialist_types:
+
+                    logger.error(
+
+                        "No valid specialist types in: %s. Valid: %s",
+
+                        args.specialists,
+
+                        ", ".join(type_map.keys()),
+
+                    )
+
+                    parser.print_help()
+
+            orchestrator = Orchestrator()
+
+            result = orchestrator.run(
+
+                objective=args.objective,
+
+                specialist_types=specialist_types,
+
+                parallel=True,
+
+            )
+
+            print("\n" + "=" * 60)
+
+            print("MULTI-AGENT ORCHESTRATION RESULT")
+
+            print("=" * 60)
+
+            print(f"Objective: {result.objective}")
+
+            print(f"Specialists: {len(result.specialist_results)}")
+
+            print(f"Total tasks: {result.total_tasks}")
+
+            print(f"Completed: {result.completed_tasks}")
+
+            print(f"Failed: {result.failed_tasks}")
+
+            print(f"Duration: {result.duration_seconds:.2f}s")
+
+            print(f"Sources: {len(result.all_sources)}")
+
+            print("=" * 60)
+
+            print("\nFINAL ANSWER:\n")
+
+            print(result.final_answer)
+
+            print("\n" + "=" * 60)
+
+            if result.all_sources:
+
+                print("\nSOURCES:")
+
+                for idx, source in enumerate(result.all_sources, 1):
+
+                    title = getattr(source, "title", "Unknown")
+
+                    src = getattr(source, "source", "unknown")
+
+                    score = getattr(source, "relevance_score", None)
+
+                    score_str = f" (relevance: {score}/100)" if score else ""
+
+                    url = getattr(source, "url", "")
+
+                    print(f"[{idx}] {title} [{src}]{score_str}")
+
+                    if url:
+
+                        print(f"    {url}")
+
+            if result.metrics:
+
+                print("\n" + "=" * 60)
+
+                print("ORCHESTRATION METRICS")
+
+                print("=" * 60)
+
+                print(f"Total findings: {result.metrics.get('total_findings', 0)}")
+
+                print(f"Total tasks: {result.metrics.get('total_tasks', 0)}")
+
+                print(f"Completed tasks: {result.metrics.get('completed_tasks', 0)}")
+
+                print(f"Failed tasks: {result.metrics.get('failed_tasks', 0)}")
+
+                print("Findings by specialist:")
+
+                for spec, cnt in (
+
+                    result.metrics.get("findings_by_specialist", {}).items()
+
+                ):
+
+                    print(f"  {spec}: {cnt}")
 
     else:
 
