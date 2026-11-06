@@ -175,6 +175,19 @@ class Orchestrator:
 
         specialists = specialist_types or self.DEFAULT_SPECIALISTS
 
+        # Normalize to valid SpecialistType enums, dropping invalid strings
+        # (e.g. "Ai") so downstream aggregation matches the decomposed tasks.
+        normalized: List[SpecialistType] = []
+        for s in specialists:
+            if isinstance(s, str):
+                try:
+                    normalized.append(SpecialistType(s))
+                except ValueError:
+                    continue
+            else:
+                normalized.append(s)
+        specialists = normalized
+
         tasks = self.decompose_objective(objective, specialists)
 
         task_results: List[TaskResult] = []
