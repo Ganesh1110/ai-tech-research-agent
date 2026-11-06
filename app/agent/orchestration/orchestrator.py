@@ -24,6 +24,9 @@ from app.agent.orchestration.schemas import (
 )
 from app.agent.schemas import SourceRecord
 from app.config import settings
+from app.knowledge_base.embeddings import OllamaEmbeddingProvider
+from app.knowledge_base.memory_retrieval import MemoryRetriever
+from app.knowledge_base.storage import KnowledgeBaseStore
 
 
 class Orchestrator:
@@ -65,6 +68,8 @@ class Orchestrator:
         self.max_workers = max_workers
 
         self.validator = EvidenceValidator()
+
+        self.embedder = OllamaEmbeddingProvider()
 
     # ---- task decomposition -------------------------------------------
 
@@ -408,6 +413,22 @@ class Orchestrator:
 
             )
 
+            # Phase 5.6: retrieve prior research context from the KB
+
+            kb_context = self._retrieve_kb_context(task.objective)
+
+            if kb_context:
+
+                prior_findings = (
+
+                    prior_findings + "\n\n" + kb_context
+
+                    if prior_findings
+
+                    else kb_context
+
+                )
+
             prompt = self._build_step_prompt(task, prior_findings)
 
             agent_result = self.agent.run(objective=prompt)
@@ -441,6 +462,20 @@ class Orchestrator:
                     )
 
                 )
+
+            # Phase 5.1/5.2: persist result as a research document with chunks
+
+            # and embeddings for future retrieval
+
+            self._store_research_document(
+
+                task=task,
+
+                answer=agent_result.final_answer or "",
+
+                sources=sources,
+
+            )
 
             return TaskResult(
 
@@ -551,6 +586,168 @@ class Orchestrator:
         lines.append("Return findings with source citations.")
 
         return "\n".join(lines)
+
+    def _retrieve_kb_context(self, objective: str) -> str:
+
+        """Phase 5.6: retrieve prior research context from the KB."""
+
+        from app.knowledge_base.memory_retrieval import MemoryRetriever
+
+        try:
+
+            with MemoryRetriever() as retriever:
+
+                return retriever.retrieve_context(
+
+                    query=objective, top_k=5
+
+                )
+
+        except Exception:
+
+            return ""
+
+    def _store_research_document(
+
+        self,
+
+        task: AgentTask,
+
+        answer: str,
+
+        sources: List[SourceRecord],
+
+    ) -> None:
+
+        """Phase 5.1/5.2: persist a specialist result as a KB document
+
+        with text chunks and embeddings for future retrieval.
+
+        """
+
+        try:
+
+            from app.knowledge_base.storage import KnowledgeBaseStore
+
+            title = f"{task.specialist_type.value}: {task.objective[:120]}"
+
+            content = answer
+
+            if sources:
+
+                content += "\n\n## Sources\n"
+
+                for s in sources:
+
+                    content += f"- {s.title} [{s.source}] {s.url}\n"
+
+            with KnowledgeBaseStore() as store:
+
+                doc = store.store_document(
+
+                    title=title,
+
+                    content=content,
+
+                    source_url=sources[0].url if sources else None,
+
+                    category=task.specialist_type.value,
+
+                    run_type="orchestration",
+
+                    run_id=task.task_id,
+
+                    metadata={
+
+                        "specialist": task.specialist_type.value,
+
+                        "task_id": task.task_id,
+
+                        "source_count": len(sources),
+
+                    },
+
+                )
+
+                # Chunk the document and embed each chunk
+
+                chunks = self._chunk_text(content, max_chars=500)
+
+                embedder = self.embedder
+
+                if not embedder.is_available():
+
+                    return
+
+                from app.knowledge_base.vector_store import SqliteVectorStore
+
+                vector_store = SqliteVectorStore(store)
+
+                for idx, chunk_text in enumerate(chunks):
+
+                    embedding = embedder.embed(chunk_text)
+
+                    chunk = store.add_chunk(
+
+                        document_id=doc.id,
+
+                        chunk_index=idx,
+
+                        content=chunk_text,
+
+                        embedding=embedding,
+
+                    )
+
+                    vector_store.store_embedding(chunk.id, embedding)
+
+                store.commit()
+
+        except Exception:
+
+            # KB storage must not fail the orchestrator run
+
+            pass
+
+    @staticmethod
+
+    def _chunk_text(text: str, max_chars: int = 500) -> List[str]:
+
+        """Simple character-based chunking."""
+
+        if not text:
+
+            return []
+
+        words = text.split()
+
+        chunks: List[str] = []
+
+        current: List[str] = []
+
+        current_len = 0
+
+        for word in words:
+
+            if current_len + len(word) + 1 > max_chars and current:
+
+                chunks.append(" ".join(current))
+
+                current = [word]
+
+                current_len = len(word)
+
+            else:
+
+                current.append(word)
+
+                current_len += len(word) + 1
+
+        if current:
+
+            chunks.append(" ".join(current))
+
+        return chunks
 
     # ---- synthesis ----------------------------------------------------
 

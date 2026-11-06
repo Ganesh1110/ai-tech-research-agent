@@ -67,6 +67,16 @@ def migrate_database():
 
     from app.database.models import ResearchItem
 
+    # Import knowledge_base models so they are registered on Base
+
+    from app.knowledge_base.models import (  # noqa: F401
+
+        ResearchDocument,
+
+        DocumentChunk,
+
+    )
+
     Base.metadata.create_all(bind=engine)
 
     new_columns = [

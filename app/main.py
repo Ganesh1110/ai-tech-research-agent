@@ -27,6 +27,8 @@ from app.agent.workflows import (
     FrameworkComparisonWorkflow,
 )
 from app.agent.orchestration import Orchestrator
+from app.knowledge_base.refresh import KnowledgeRefresher
+from app.knowledge_base.storage import KnowledgeBaseStore
 from app.monitoring import Evaluator, TestCase
 from app.services.intelligence import run_intelligence
 from app.services.reports import generate_daily_report, format_report_text
@@ -330,6 +332,12 @@ def main():
         type=str,
         default="",
         help="Comma-separated specialist types (ai_llm, agentic_ai, react_native, developer_tools, open_source)"
+    )
+
+    parser.add_argument(
+        "--kb-stats",
+        action="store_true",
+        help="Show knowledge base statistics"
     )
 
     args = parser.parse_args()
@@ -875,6 +883,34 @@ def main():
                 ):
 
                     print(f"  {spec}: {cnt}")
+
+    elif args.kb_stats:
+
+        store = KnowledgeBaseStore()
+
+        refresher = KnowledgeRefresher(store)
+
+        summary = refresher.summary()
+
+        print("\n" + "=" * 60)
+
+        print("KNOWLEDGE BASE STATISTICS")
+
+        print("=" * 60)
+
+        print(f"Total documents: {summary['total_documents']}")
+
+        print(f"Total chunks: {summary['total_chunks']}")
+
+        print(f"Embedded chunks: {summary['embedded_chunks']}")
+
+        print(f"Embedding coverage: {summary['embedding_coverage']}")
+
+        print(f"Stale documents: {summary['stale_document_count']}")
+
+        print("=" * 60)
+
+        store.close()
 
     else:
 
