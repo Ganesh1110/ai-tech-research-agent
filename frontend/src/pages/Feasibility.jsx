@@ -1,125 +1,179 @@
-import React, { useState } from "react"
-import { CheckReportIcon, CheckCircleIcon, ExternalLinkIcon, SparklesIcon, ShieldCheckIcon } from "../components/common/Icons"
+import React, { useState, useCallback } from "react"
+import {
+  CheckReportIcon,
+  CheckCircleIcon,
+  ExternalLinkIcon,
+  SparklesIcon,
+  ShieldCheckIcon,
+  RefreshIcon,
+} from "../components/common/Icons"
+import { runOrchestrate } from "../services/api"
+
+const DEFAULT_SPECIALISTS = "developer_tools,ai_llm,general"
 
 export function Feasibility() {
-  const reports = [
-    {
-      id: 1,
-      title: "Model Context Protocol (MCP) Server for Local SQLite Knowledge Base",
-      status: "Feasible",
-      confidence: "94%",
-      architecture: "Python AsyncIO / FastMCP daemon with stdio / SSE transport",
-      hardware: "Low (< 100MB RAM, 1 CPU core)",
-      cost: "$0 (Local open-source runtime)",
-      performance: "< 15ms latency per query lookup via indexed sqlite3 tables",
-      security: "Read-only database mode recommended to prevent SQL injection in autonomous workflows",
-      complexity: "Low",
-      recommendation: "Implement immediately as a secondary transport for research agent tools.",
-    },
-    {
-      id: 2,
-      title: "Local Quantized LLM (Qwen 2.5 14B) on Apple Silicon / M-Series",
-      status: "Feasible",
-      confidence: "98%",
-      architecture: "Ollama / llama.cpp Metal GPU Acceleration",
-      hardware: "Requires 16GB Unified Memory minimum (32GB recommended for context window > 16k)",
-      cost: "$0 recurring inference cost",
-      performance: "32-45 tokens/sec generation speed with Q4_K_M quantization",
-      security: "Full on-prem data privacy, zero telemetry, air-gapped capability",
-      complexity: "Minimal",
-      recommendation: "Optimal foundation model for autonomous research synthesis and scoring.",
-    },
-    {
-      id: 3,
-      title: "Autonomous 24/7 Agent Daemon with APScheduler & Telegram Notifications",
-      status: "Feasible",
-      confidence: "92%",
-      architecture: "Background worker loop with APScheduler and SQLite job queue persistence",
-      hardware: "Minimal idle footprint (< 0.5% CPU)",
-      cost: "Free Telegram Bot API",
-      performance: "5-minute interval cycle with graceful deduplication",
-      security: "Store Telegram bot token in local .env, restrict chat ID authorization",
-      complexity: "Moderate",
-      recommendation: "Ready for scheduled automation once Telegram bot credentials are provided.",
-    },
-  ]
+  const [idea, setIdea] = useState("")
+  const [specialists, setSpecialists] = useState(DEFAULT_SPECIALISTS)
+  const [report, setReport] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleRun = useCallback(async (e) => {
+    e.preventDefault()
+    if (!idea.trim()) return
+    setLoading(true)
+    setError(null)
+    setReport(null)
+    try {
+      const result = await runOrchestrate({
+        objective: `Evaluate the technical feasibility of: ${idea}. Cover architecture, hardware requirements, estimated cost, performance, security considerations, complexity, and implementation recommendation.`,
+        specialists,
+        parallel: true,
+      })
+      setReport({
+        idea,
+        objective: result.objective,
+        specialists: result.specialists,
+        tasks: result.total_tasks,
+        completed: result.completed_tasks,
+        failed: result.failed_tasks,
+        duration: result.duration_seconds,
+        sources: result.sources,
+        finalAnswer: result.final_answer || "",
+        createdAt: result.created_at,
+      })
+    } catch (err) {
+      setError(err.message || "Feasibility evaluation failed")
+    } finally {
+      setLoading(false)
+    }
+  }, [idea, specialists])
+
+  const statusColor = (s) => {
+    switch (s) {
+      case "Feasible": return "var(--accent-emerald)"
+      case "Conditional": return "var(--accent-amber)"
+      case "Not Feasible": return "var(--accent-rose)"
+      default: return "var(--accent-cyan)"
+    }
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 900 }}>
       <div>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-bright)", display: "flex", alignItems: "center", gap: 10 }}>
           <CheckReportIcon size={22} color="var(--accent-emerald)" />
-          <span>Technical Feasibility Evaluations</span>
+          <span>Technical Feasibility Evaluator</span>
         </h2>
         <p style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 2 }}>
-          Architectural compatibility, hardware profiles, security considerations, and implementation complexity
+          Submit a project idea and the multi-agent research orchestrator will evaluate architecture, hardware, cost, performance, security, and complexity.
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 20 }}>
-        {reports.map((rep) => (
-          <div key={rep.id} className="glass-panel" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span
-                style={{
-                  background: "rgba(16, 185, 129, 0.15)",
-                  color: "var(--accent-emerald)",
-                  border: "1px solid rgba(16, 185, 129, 0.3)",
-                  padding: "3px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontWeight: 700,
-                }}
-              >
-                {rep.status} • {rep.confidence} Confidence
-              </span>
+      <form onSubmit={handleRun} style={{ display: "flex", flexDirection: "column", gap: 12, background: "var(--bg-card)", padding: 20, borderRadius: 14, border: "1px solid var(--border-subtle)" }}>
+        <div>
+          <label style={{ display: "block", fontSize: 12, color: "var(--text-muted)", marginBottom: 6, fontWeight: 600 }}>Project idea / technology to evaluate</label>
+          <input
+            type="text"
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            placeholder="e.g. Local MCP server for SQLite knowledge base, or Quantized LLM on Apple Silicon"
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 8,
+              color: "var(--text-main)",
+              fontSize: 13,
+            }}
+          />
+        </div>
 
-              <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
-                Complexity: <strong style={{ color: "var(--accent-cyan)" }}>{rep.complexity}</strong>
-              </span>
+        <div>
+          <label style={{ display: "block", fontSize: 12, color: "var(--text-muted)", marginBottom: 6, fontWeight: 600 }}>Specialist agents (comma-separated)</label>
+          <input
+            type="text"
+            value={specialists}
+            onChange={(e) => setSpecialists(e.target.value)}
+            placeholder="developer_tools,ai_llm,general"
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 8,
+              color: "var(--text-main)",
+              fontSize: 13,
+            }}
+          />
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+            Valid: ai_llm, agentic_ai, react_native, developer_tools, open_source, general
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || !idea.trim()}
+          className="btn-primary"
+          style={{ padding: "10px 18px", fontSize: 13, width: "fit-content", cursor: loading || !idea.trim() ? "not-allowed" : "pointer" }}
+        >
+          {loading ? <span>Evaluating…</span> : <><SparklesIcon size={14} /> <span>Run Feasibility Evaluation</span></>}
+        </button>
+      </form>
+
+      {error && (
+        <div className="glass-panel" style={{ padding: 14, color: "#fca5a5", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
+          <span>⚠️</span> {error}
+        </div>
+      )}
+
+      {report && (
+        <div className="glass-panel" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-bright)" }}>{report.idea}</h3>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                {report.specialists} specialists • {report.completed}/{report.tasks} tasks completed
+              </p>
             </div>
-
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text-bright)", lineHeight: 1.35 }}>
-              {rep.title}
-            </h3>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 12.5 }}>
-              <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: 10, borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
-                <div style={{ color: "var(--text-muted)", marginBottom: 2 }}>Architecture:</div>
-                <div style={{ color: "var(--text-main)", fontWeight: 500 }}>{rep.architecture}</div>
-              </div>
-              <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: 10, borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
-                <div style={{ color: "var(--text-muted)", marginBottom: 2 }}>Hardware & RAM:</div>
-                <div style={{ color: "var(--text-main)", fontWeight: 500 }}>{rep.hardware}</div>
-              </div>
-              <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: 10, borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
-                <div style={{ color: "var(--text-muted)", marginBottom: 2 }}>Performance Latency:</div>
-                <div style={{ color: "var(--text-main)", fontWeight: 500 }}>{rep.performance}</div>
-              </div>
-              <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: 10, borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
-                <div style={{ color: "var(--text-muted)", marginBottom: 2 }}>Estimated Cost:</div>
-                <div style={{ color: "var(--accent-emerald)", fontWeight: 600 }}>{rep.cost}</div>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 12.5, color: "var(--text-dim)", lineHeight: 1.5, borderLeft: "3px solid var(--accent-purple-light)", paddingLeft: 10 }}>
-              <strong style={{ color: "var(--text-main)" }}>Security Considerations:</strong> {rep.security}
-            </div>
-
-            <div
-              style={{
-                borderTop: "1px solid var(--border-subtle)",
-                paddingTop: 12,
-                fontSize: 12.5,
-                color: "var(--accent-cyan)",
-                lineHeight: 1.4,
-              }}
-            >
-              <strong>Recommendation:</strong> {rep.recommendation}
+            <div style={{ display: "flex", gap: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-mono)" }}>
+              <span style={{ color: "var(--accent-emerald)" }}>{report.completed} done</span>
+              {report.failed > 0 && <span style={{ color: "var(--accent-rose)" }}>{report.failed} failed</span>}
+              <span style={{ color: "var(--accent-cyan)" }}>{report.duration?.toFixed(1) || 0}s</span>
+              <span style={{ color: "var(--text-dim)" }}>{report.sources} sources</span>
             </div>
           </div>
-        ))}
-      </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <h4 style={{ fontSize: 12.5, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Feasibility Report</h4>
+            <div
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: 10,
+                padding: 16,
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: "var(--text-main)",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {report.finalAnswer}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+            <button
+              onClick={() => setReport(null)}
+              className="btn-secondary"
+              style={{ padding: "6px 14px", fontSize: 12 }}
+            >
+              <RefreshIcon size={14} /> New Evaluation
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
