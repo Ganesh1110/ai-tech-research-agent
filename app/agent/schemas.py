@@ -66,3 +66,4 @@ class AgentResult(BaseModel):
     sources: List[SourceRecord] = Field(default_factory=list)
     total_steps: int = 0
     completed_at: Optional[str] = None
+    metrics: Optional[Dict[str, Any]] = None

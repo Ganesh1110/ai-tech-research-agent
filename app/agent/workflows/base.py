@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.agent.agent import AutonomousAgent
 from app.agent.schemas import AgentResult, SourceRecord
+from app.monitoring.metrics import MetricsCollector, SourceQualityMetric
 
 
 class WorkflowStep(BaseModel):
@@ -41,6 +42,7 @@ class WorkflowResult(BaseModel):
     final_answer: Optional[str] = None
     sources: List[SourceRecord] = Field(default_factory=list)
     created_at: Optional[str] = None
+    metrics: Optional[Dict[str, Any]] = None
 
 
 class ResearchWorkflow(ABC):
@@ -88,6 +90,9 @@ class ResearchWorkflow(ABC):
         all_sources: List[SourceRecord] = []
         seen_urls: set = set()
 
+        workflow_metrics = MetricsCollector()
+        workflow_metrics.start_run(objective=objective, workflow_type=self.workflow_type)
+
         steps = self.plan_steps(objective, context)
 
         for step in steps:
@@ -95,6 +100,44 @@ class ResearchWorkflow(ABC):
             prompt = self._build_step_prompt(objective, step, step_results)
 
             agent_result: AgentResult = self.agent.run(objective=prompt)
+
+            # Merge agent-level metrics into workflow-level metrics
+
+            for tool_call in self.agent.metrics.tool_call_metrics:
+
+                workflow_metrics.record_tool_call(
+
+                    tool=tool_call.tool,
+
+                    success=tool_call.success,
+
+                    latency_seconds=tool_call.latency_seconds,
+
+                    arguments=tool_call.arguments,
+
+                    error=tool_call.error,
+
+                )
+
+            for step_metric in self.agent.metrics.step_metrics:
+
+                workflow_metrics.record_step(
+
+                    step_number=step_metric.step_number,
+
+                    status=step_metric.status,
+
+                    thought=step_metric.thought,
+
+                    latency_seconds=step_metric.latency_seconds,
+
+                    observation=step_metric.observation,
+
+                )
+
+            for error in self.agent.metrics.errors:
+
+                workflow_metrics.record_error(error)
 
             step_sources = list(agent_result.sources or [])
 
@@ -126,6 +169,10 @@ class ResearchWorkflow(ABC):
 
             step_results.append(step_result)
 
+        workflow_metrics.record_sources(all_sources)
+
+        workflow_metrics.finish_run(status="completed")
+
         final_answer = self.synthesize(objective, step_results)
 
         return WorkflowResult(
@@ -141,6 +188,8 @@ class ResearchWorkflow(ABC):
             sources=all_sources,
 
             created_at=datetime.now().isoformat(),
+
+            metrics=workflow_metrics.to_dict(),
 
         )
 

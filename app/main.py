@@ -26,6 +26,7 @@ from app.agent.workflows import (
     TechnologyDiscoveryWorkflow,
     FrameworkComparisonWorkflow,
 )
+from app.monitoring import Evaluator, TestCase
 from app.services.intelligence import run_intelligence
 from app.services.reports import generate_daily_report, format_report_text
 
@@ -311,6 +312,12 @@ def main():
         help="Optional comparison criteria for framework_comparison workflow"
     )
 
+    parser.add_argument(
+        "--evaluate",
+        action="store_true",
+        help="Run evaluation suite and print reliability report"
+    )
+
     args = parser.parse_args()
 
     create_tables()
@@ -415,6 +422,76 @@ def main():
 
                         print(f"  {url}")
 
+            if result.metrics:
+
+                print("\n" + "=" * 60)
+
+                print("EXECUTION METRICS")
+
+                print("=" * 60)
+
+                m = result.metrics
+
+                print(f"Status: {m.get('status')}")
+
+                print(f"Duration: {m.get('duration_seconds')}s")
+
+                print(f"Total steps: {m.get('total_steps')}")
+
+                step_sum = m.get("step_summary", {})
+
+                print(f"Completed steps: {step_sum.get('completed_steps', 0)}")
+
+                print(f"Failed steps: {step_sum.get('failed_steps', 0)}")
+
+                print(f"Avg step latency: {step_sum.get('avg_step_latency_seconds', 0)}s")
+
+                print(f"Tool success rate: {m.get('overall_success_rate', 0)}")
+
+                print("\nTool usage:")
+
+                for tool, stats in m.get("tool_usage", {}).items():
+
+                    print(
+
+                        f"  {tool}: {stats['calls']} calls, "
+
+                        f"{stats['successes']} ok, {stats['failures']} fail, "
+
+                        f"avg {stats['avg_latency_seconds']}s"
+
+                    )
+
+                sq = m.get("source_quality", {})
+
+                print("\nSource quality:")
+
+                print(f"  Total sources: {sq.get('total_sources', 0)}")
+
+                print(f"  With URL: {sq.get('sources_with_url', 0)}")
+
+                print(f"  With title: {sq.get('sources_with_title', 0)}")
+
+                print(f"  With score: {sq.get('sources_with_score', 0)}")
+
+                print(f"  Avg relevance: {sq.get('avg_relevance_score')}")
+
+                if sq.get("sources_by_category"):
+
+                    print("  By category:")
+
+                    for cat, cnt in sq["sources_by_category"].items():
+
+                        print(f"    {cat}: {cnt}")
+
+                if m.get("errors"):
+
+                    print("\nErrors:")
+
+                    for err in m["errors"]:
+
+                        print(f"  - {err}")
+
     elif args.workflow:
 
         if not args.objective:
@@ -506,6 +583,130 @@ def main():
                         if url:
 
                             print(f"    {url}")
+
+                if result.metrics:
+
+                    print("\n" + "=" * 60)
+
+                    print("EXECUTION METRICS")
+
+                    print("=" * 60)
+
+                    m = result.metrics
+
+                    print(f"Status: {m.get('status')}")
+
+                    print(f"Duration: {m.get('duration_seconds')}s")
+
+                    print(f"Total steps: {m.get('total_steps')}")
+
+                    step_sum = m.get("step_summary", {})
+
+                    print(f"Completed steps: {step_sum.get('completed_steps', 0)}")
+
+                    print(f"Failed steps: {step_sum.get('failed_steps', 0)}")
+
+                    print(f"Avg step latency: {step_sum.get('avg_step_latency_seconds', 0)}s")
+
+                    print(f"Tool success rate: {m.get('overall_success_rate', 0)}")
+
+                    print("\nTool usage:")
+
+                    for tool, stats in m.get("tool_usage", {}).items():
+
+                        print(
+
+                            f"  {tool}: {stats['calls']} calls, "
+
+                            f"{stats['successes']} ok, {stats['failures']} fail, "
+
+                            f"avg {stats['avg_latency_seconds']}s"
+
+                        )
+
+                    sq = m.get("source_quality", {})
+
+                    print("\nSource quality:")
+
+                    print(f"  Total sources: {sq.get('total_sources', 0)}")
+
+                    print(f"  With URL: {sq.get('sources_with_url', 0)}")
+
+                    print(f"  With title: {sq.get('sources_with_title', 0)}")
+
+                    print(f"  With score: {sq.get('sources_with_score', 0)}")
+
+                    print(f"  Avg relevance: {sq.get('avg_relevance_score')}")
+
+                    if sq.get("sources_by_category"):
+
+                        print("  By category:")
+
+                        for cat, cnt in sq["sources_by_category"].items():
+
+                            print(f"    {cat}: {cnt}")
+
+                    if m.get("errors"):
+
+                        print("\nErrors:")
+
+                        for err in m["errors"]:
+
+                            print(f"  - {err}")
+
+    elif args.evaluate:
+
+        evaluator = Evaluator(agent=AutonomousAgent())
+
+        cases = [
+
+            TestCase(
+
+                name="latest_ai_llm_discoveries",
+
+                objective="Find the latest AI and LLM-related research items in my database. Summarize the five most relevant discoveries.",
+
+                mode="agent",
+
+                expected_min_sources=1,
+
+            ),
+
+            TestCase(
+
+                name="agentic_ai_vs_ai_llm_comparison",
+
+                objective="Compare the research available in Agentic AI and AI/LLM categories. Identify three common technologies and three differences.",
+
+                mode="workflow",
+
+                workflow_type="framework_comparison",
+
+                criteria="architecture, tool-calling capabilities, memory support, deployment suitability",
+
+                expected_min_sources=1,
+
+            ),
+
+            TestCase(
+
+                name="local_ai_agent_frameworks",
+
+                objective="Research local AI agent frameworks from my database. Compare their architecture, tool-calling capabilities, memory support, and suitability for Ollama deployment.",
+
+                mode="workflow",
+
+                workflow_type="technology_discovery",
+
+                expected_min_sources=1,
+
+            ),
+
+        ]
+
+        results = evaluator.run_suite(cases)
+
+        print(evaluator.report(results))
 
     else:
 

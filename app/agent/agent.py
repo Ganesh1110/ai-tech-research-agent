@@ -1,8 +1,10 @@
 import logging
+import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from app.agent.memory import ResearchMemory
+from app.monitoring.metrics import MetricsCollector
 from app.agent.planner import Planner
 from app.agent.schemas import (
     AgentResult,
@@ -57,6 +59,7 @@ class AutonomousAgent:
         self,
         model: Optional[str] = None,
         max_steps: int = 5,
+        metrics_collector: Optional[MetricsCollector] = None,
     ):
 
         self.model = model or settings.OLLAMA_MODEL
@@ -67,6 +70,7 @@ class AutonomousAgent:
         )
         self.planner = Planner(model=self.model)
         self.tool_registry = TOOL_REGISTRY
+        self.metrics = metrics_collector or MetricsCollector()
 
     def _call_llm(
         self,
@@ -136,9 +140,27 @@ class AutonomousAgent:
 
         for tool_call in tool_calls:
 
+            tool_start = time.time()
+
             tool = self.tool_registry.get_tool(tool_call.tool)
 
             if not tool:
+
+                latency = time.time() - tool_start
+
+                self.metrics.record_tool_call(
+
+                    tool=tool_call.tool,
+
+                    success=False,
+
+                    latency_seconds=latency,
+
+                    arguments=tool_call.arguments,
+
+                    error=f"Unknown tool: {tool_call.tool}",
+
+                )
 
                 results.append(
 
@@ -174,6 +196,8 @@ class AutonomousAgent:
 
                 result = tool(**valid_kwargs)
 
+                latency = time.time() - tool_start
+
                 if hasattr(result, "to_dict"):
 
                     data = result.to_dict()
@@ -194,6 +218,20 @@ class AutonomousAgent:
 
                     )
 
+                    self.metrics.record_tool_call(
+
+                        tool=tool_call.tool,
+
+                        success=data.get("success", False),
+
+                        latency_seconds=latency,
+
+                        arguments=tool_call.arguments,
+
+                        error=data.get("error"),
+
+                    )
+
                 else:
 
                     results.append(
@@ -210,7 +248,21 @@ class AutonomousAgent:
 
                     )
 
+                    self.metrics.record_tool_call(
+
+                        tool=tool_call.tool,
+
+                        success=True,
+
+                        latency_seconds=latency,
+
+                        arguments=tool_call.arguments,
+
+                    )
+
             except Exception as error:
+
+                latency = time.time() - tool_start
 
                 logger.exception(
 
@@ -233,6 +285,20 @@ class AutonomousAgent:
                         error=str(error),
 
                     )
+
+                )
+
+                self.metrics.record_tool_call(
+
+                    tool=tool_call.tool,
+
+                    success=False,
+
+                    latency_seconds=latency,
+
+                    arguments=tool_call.arguments,
+
+                    error=str(error),
 
                 )
 
@@ -267,6 +333,8 @@ class AutonomousAgent:
 
         logger.info("Agent planning: %s", objective)
 
+        self.metrics.start_run(objective=objective)
+
         plan = self.planner.plan(
 
             objective=objective,
@@ -300,6 +368,8 @@ class AutonomousAgent:
         for step_num in range(1, self.max_steps + 1):
 
             logger.info("Agent step %s/%s", step_num, self.max_steps)
+
+            step_start_time = time.time()
 
             context = memory.get_context_summary()
 
@@ -442,6 +512,24 @@ class AutonomousAgent:
 
             memory.add_step(step)
 
+            step_latency = time.time() - step_start_time
+
+            self.metrics.record_step(
+
+                step_number=step_num,
+
+                status=step_status.value,
+
+                thought=thought,
+
+                latency_seconds=step_latency,
+
+                observation=observation,
+
+            )
+
+            self.metrics.record_sources(memory.sources)
+
             if is_final or step_status == AgentStatus.COMPLETED:
 
                 status = AgentStatus.COMPLETED
@@ -462,6 +550,10 @@ class AutonomousAgent:
 
             final_answer = self._synthesize_findings(objective, memory)
 
+        self.metrics.record_sources(memory.sources)
+
+        self.metrics.finish_run(status=status.value)
+
         return AgentResult(
 
             objective=objective,
@@ -477,6 +569,8 @@ class AutonomousAgent:
             total_steps=len(steps),
 
             completed_at=datetime.now().isoformat(),
+
+            metrics=self.metrics.to_dict(),
 
         )
 
