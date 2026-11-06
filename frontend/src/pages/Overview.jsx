@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from "react"
 import {
   RocketIcon,
-  StarIcon,
-  CalendarIcon,
-  ShieldCheckIcon,
   CheckCircleIcon,
   ClockIcon,
   SparklesIcon,
-  SendIcon,
   ExternalLinkIcon,
   RefreshIcon,
   GithubIcon,
@@ -19,6 +15,8 @@ import { DonutChart } from "../components/common/DonutChart"
 import { LineChart } from "../components/common/LineChart"
 import { BrainHologram } from "../components/common/BrainHologram"
 import { WeeklyBriefingHero } from "../components/overview/WeeklyBriefingHero"
+import { KpiCards } from "../components/overview/KpiCards"
+import { QuickBrainstormBar } from "../components/overview/QuickBrainstormBar"
 import { getLatestWeeklyBriefing, generateWeeklyBriefing } from "../services/api"
 
 export function Overview({
@@ -33,13 +31,6 @@ export function Overview({
   onTriggerProcess,
   isProcessing,
 }) {
-  const [quickInput, setQuickInput] = useState("")
-
-  const totalDiscoveries = stats.totalDiscoveries || 1058
-  const highPotential = stats.highPotential || 86
-  const newToday = stats.newToday || 24
-  const sourceValidity = stats.sourceValidity || 92
-
   const isRunning = schedulerStatus?.running ?? true
 
   const [briefing, setBriefing] = useState(null)
@@ -67,17 +58,6 @@ export function Overview({
     } finally {
       setBriefingLoading(false)
     }
-  }
-
-  const handleQuickSubmit = (e) => {
-    e.preventDefault()
-    if (!quickInput.trim()) return
-    onQuickBrainstorm(quickInput.trim())
-    setQuickInput("")
-  }
-
-  const handleChipClick = (text) => {
-    onQuickBrainstorm(text)
   }
 
   // Display top items
@@ -148,149 +128,7 @@ export function Overview({
       />
 
       {/* 1. KPI Cards Row */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: 16,
-        }}
-      >
-        {/* KPI 1: Total Discoveries */}
-        <div className="glass-panel" style={{ padding: "18px 20px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "rgba(139, 92, 246, 0.15)",
-                  border: "1px solid rgba(139, 92, 246, 0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <RocketIcon size={22} color="#a855f7" />
-              </div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--text-bright)", lineHeight: 1.1 }}>
-                  {totalDiscoveries.toLocaleString()}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>
-                  Total Discoveries
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                  <span style={{ fontSize: 11, color: "var(--accent-emerald)", fontWeight: 600 }}>↑ +12%</span>
-                </div>
-              </div>
-            </div>
-            <Sparkline data={[12, 14, 13, 17, 19, 18, 24, 28]} color="#8b5cf6" width={75} height={32} />
-          </div>
-        </div>
-
-        {/* KPI 2: High Potential */}
-        <div className="glass-panel" style={{ padding: "18px 20px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "rgba(245, 158, 11, 0.15)",
-                  border: "1px solid rgba(245, 158, 11, 0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <StarIcon size={22} color="#f59e0b" />
-              </div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--text-bright)", lineHeight: 1.1 }}>
-                  {highPotential.toLocaleString()}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>
-                  High Potential
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                  <span style={{ fontSize: 11, color: "var(--accent-emerald)", fontWeight: 600 }}>↑ +8%</span>
-                </div>
-              </div>
-            </div>
-            <Sparkline data={[8, 10, 11, 14, 13, 16, 18, 21]} color="#f59e0b" width={75} height={32} />
-          </div>
-        </div>
-
-        {/* KPI 3: New Today */}
-        <div className="glass-panel" style={{ padding: "18px 20px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "rgba(59, 130, 246, 0.15)",
-                  border: "1px solid rgba(59, 130, 246, 0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CalendarIcon size={22} color="#3b82f6" />
-              </div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--text-bright)", lineHeight: 1.1 }}>
-                  {newToday.toLocaleString()}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>
-                  New Today
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                  <span style={{ fontSize: 11, color: "var(--accent-emerald)", fontWeight: 600 }}>↑ +20%</span>
-                </div>
-              </div>
-            </div>
-            <Sparkline data={[5, 8, 9, 12, 14, 18, 22, 24]} color="#00f0ff" width={75} height={32} />
-          </div>
-        </div>
-
-        {/* KPI 4: Source Validity */}
-        <div className="glass-panel" style={{ padding: "18px 20px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "rgba(16, 185, 129, 0.15)",
-                  border: "1px solid rgba(16, 185, 129, 0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ShieldCheckIcon size={22} color="#10b981" />
-              </div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "var(--text-bright)", lineHeight: 1.1 }}>
-                  {sourceValidity}%
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>
-                  Source Validity
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                  <span style={{ fontSize: 11, color: "var(--accent-emerald)", fontWeight: 600 }}>↑ +2%</span>
-                </div>
-              </div>
-            </div>
-            <Sparkline data={[88, 89, 90, 91, 91, 92, 92, 92]} color="#10b981" width={75} height={32} />
-          </div>
-        </div>
-      </div>
+      <KpiCards stats={stats} />
 
       {/* 2. Central Section: Autonomous Research Engine & Recent Activity */}
       <div
@@ -806,98 +644,8 @@ export function Overview({
           </div>
         </div>
 
-        {/* Card 3: Brainstorm with Your Agent */}
-        <div className="glass-panel" style={{ padding: "20px 22px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <SparklesIcon size={18} color="#a855f7" />
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text-bright)" }}>
-                Brainstorm with Your Agent
-              </h3>
-            </div>
-            <p style={{ fontSize: 12, color: "var(--text-dim)", lineHeight: 1.4 }}>
-              Discuss an idea, ask for feasibility analysis, or explore new possibilities...
-            </p>
-          </div>
-
-          <form onSubmit={handleQuickSubmit} style={{ marginTop: 14 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "rgba(10, 15, 28, 0.85)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: 10,
-                padding: "6px 10px",
-              }}
-            >
-              <input
-                type="text"
-                value={quickInput}
-                onChange={(e) => setQuickInput(e.target.value)}
-                placeholder="Type your question here..."
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  color: "var(--text-main)",
-                  fontSize: 12.5,
-                  width: "100%",
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  background: "linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)",
-                  border: "none",
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  color: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  flexShrink: 0,
-                  boxShadow: "0 0 10px rgba(124, 58, 237, 0.4)",
-                }}
-              >
-                <SendIcon size={14} />
-              </button>
-            </div>
-          </form>
-
-          {/* Prompt Chips */}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
-            {["Compare LangGraph vs CrewAI", "FastMCP server setup", "Ollama vs vLLM", "React Native AI"].map((chip) => (
-              <button
-                key={chip}
-                onClick={() => handleChipClick(chip)}
-                style={{
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: 14,
-                  padding: "4px 10px",
-                  fontSize: 11,
-                  color: "var(--text-dim)",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-purple-light)"
-                  e.currentTarget.style.color = "var(--text-bright)"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-subtle)"
-                  e.currentTarget.style.color = "var(--text-dim)"
-                }}
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Card 3: Quick Brainstorming */}
+        <QuickBrainstormBar onQuickBrainstorm={onQuickBrainstorm} />
       </div>
 
       {/* 4. Bottom Row: Top Recommendations & Autonomous Status */}

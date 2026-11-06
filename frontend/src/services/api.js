@@ -1,5 +1,27 @@
 const API_BASE = "/api"
 
+// Helper to retrieve configured API key from localStorage or Vite environment
+export function getStoredApiKey() {
+  if (typeof window !== "undefined") {
+    return (
+      window.localStorage?.getItem("research_agent_api_key") ||
+      (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_KEY) ||
+      ""
+    )
+  }
+  return ""
+}
+
+export function setStoredApiKey(key) {
+  if (typeof window !== "undefined") {
+    if (key) {
+      window.localStorage?.setItem("research_agent_api_key", key)
+    } else {
+      window.localStorage?.removeItem("research_agent_api_key")
+    }
+  }
+}
+
 // Helper to handle API responses cleanly
 async function handleResponse(res) {
   if (!res.ok) {
@@ -18,30 +40,41 @@ async function handleResponse(res) {
   return res.json()
 }
 
+// Centralized authenticated request dispatcher
+async function apiFetch(path, options = {}) {
+  const headers = new Headers(options.headers || {})
+  const apiKey = getStoredApiKey()
+  if (apiKey && !headers.has("X-API-Key") && !headers.has("Authorization")) {
+    headers.set("X-API-Key", apiKey)
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+  })
+  return handleResponse(res)
+}
+
 // Health & System
 export async function health() {
-  const res = await fetch(`${API_BASE}/health`)
-  return handleResponse(res)
+  return apiFetch("/health")
 }
 
 // Autonomous Engine
 export async function autonomousStatus() {
-  const res = await fetch(`${API_BASE}/autonomous/status`)
-  return handleResponse(res)
+  return apiFetch("/autonomous/status")
 }
 
 export async function autonomousStart() {
-  const res = await fetch(`${API_BASE}/autonomous/start`, {
+  return apiFetch("/autonomous/start", {
     method: "POST",
   })
-  return handleResponse(res)
 }
 
 export async function autonomousStop() {
-  const res = await fetch(`${API_BASE}/autonomous/stop`, {
+  return apiFetch("/autonomous/stop", {
     method: "POST",
   })
-  return handleResponse(res)
 }
 
 export async function autonomousJobs(params = {}) {
@@ -50,20 +83,17 @@ export async function autonomousJobs(params = {}) {
   if (params.worker_type) query.append("worker_type", params.worker_type)
   if (params.limit) query.append("limit", params.limit)
   const qs = query.toString() ? `?${query.toString()}` : ""
-  const res = await fetch(`${API_BASE}/autonomous/jobs${qs}`)
-  return handleResponse(res)
+  return apiFetch(`/autonomous/jobs${qs}`)
 }
 
 export async function autonomousProcess() {
-  const res = await fetch(`${API_BASE}/autonomous/process`, {
+  return apiFetch("/autonomous/process", {
     method: "POST",
   })
-  return handleResponse(res)
 }
 
 export async function autonomousDiscoveries(limit = 50, minScore = 0.0) {
-  const res = await fetch(`${API_BASE}/autonomous/discoveries?limit=${limit}&min_score=${minScore}`)
-  return handleResponse(res)
+  return apiFetch(`/autonomous/discoveries?limit=${limit}&min_score=${minScore}`)
 }
 
 export async function autonomousRecommendations(level = null, limit = 50) {
@@ -71,75 +101,65 @@ export async function autonomousRecommendations(level = null, limit = 50) {
   if (level) query.append("level", level)
   if (limit) query.append("limit", limit)
   const qs = query.toString() ? `?${query.toString()}` : ""
-  const res = await fetch(`${API_BASE}/autonomous/recommendations${qs}`)
-  return handleResponse(res)
+  return apiFetch(`/autonomous/recommendations${qs}`)
 }
 
 export async function autonomousCycles(limit = 20) {
-  const res = await fetch(`${API_BASE}/autonomous/cycles?limit=${limit}`)
-  return handleResponse(res)
+  return apiFetch(`/autonomous/cycles?limit=${limit}`)
 }
 
 // Agent, Workflow & Orchestration
 export async function runAgent(objective) {
-  const res = await fetch(`${API_BASE}/agent/run`, {
+  return apiFetch("/agent/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ objective }),
   })
-  return handleResponse(res)
 }
 
 export async function runWorkflow({ workflowType, objective, criteria }) {
-  const res = await fetch(`${API_BASE}/workflow/run`, {
+  return apiFetch("/workflow/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ workflow_type: workflowType, objective, criteria }),
   })
-  return handleResponse(res)
 }
 
 export async function runOrchestrate({ objective, specialists, parallel }) {
-  const res = await fetch(`${API_BASE}/orchestrate/run`, {
+  return apiFetch("/orchestrate/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ objective, specialists, parallel }),
   })
-  return handleResponse(res)
 }
 
 // Knowledge Base
 export async function kbSearch({ query, topK = 10, category }) {
-  const res = await fetch(`${API_BASE}/kb/search`, {
+  return apiFetch("/kb/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, top_k: topK, category }),
   })
-  return handleResponse(res)
 }
 
 export async function kbStats() {
-  const res = await fetch(`${API_BASE}/kb/stats`)
-  return handleResponse(res)
+  return apiFetch("/kb/stats")
 }
 
 export async function kbDocuments(limit = 50) {
-  const res = await fetch(`${API_BASE}/kb/documents?limit=${limit}`)
-  return handleResponse(res)
+  return apiFetch(`/kb/documents?limit=${limit}`)
 }
 
 // Evaluation Suite
 export async function runEvaluate() {
-  const res = await fetch(`${API_BASE}/evaluate/run`, {
+  return apiFetch("/evaluate/run", {
     method: "POST",
   })
-  return handleResponse(res)
 }
 
 // Tech Frameworks Directory
 export async function fetchFrameworks() {
-  const res = await fetch(`${API_BASE}/frameworks`)
-  return handleResponse(res)
+  return apiFetch("/frameworks")
 }
 
 // Founder OS: Startup Intelligence, Briefings & Growth
@@ -149,83 +169,69 @@ export async function getStartupOpportunities(params = {}) {
   if (params.min_score) query.append("min_score", params.min_score)
   if (params.limit) query.append("limit", params.limit)
   const qs = query.toString() ? `?${query.toString()}` : ""
-  const res = await fetch(`${API_BASE}/startup/opportunities${qs}`)
-  return handleResponse(res)
+  return apiFetch(`/startup/opportunities${qs}`)
 }
 
 export async function scanStartupOpportunities(limit = 10, minScore = 65) {
-  const res = await fetch(`${API_BASE}/startup/opportunities/scan?limit=${limit}&min_score=${minScore}`, {
+  return apiFetch(`/startup/opportunities/scan?limit=${limit}&min_score=${minScore}`, {
     method: "POST",
   })
-  return handleResponse(res)
 }
 
 export async function updateOpportunityStatus(oppId, status, notes = null) {
-  const res = await fetch(`${API_BASE}/startup/opportunities/${oppId}/status`, {
+  return apiFetch(`/startup/opportunities/${oppId}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status, notes }),
   })
-  return handleResponse(res)
 }
 
 export async function getWeeklyBriefings(limit = 10) {
-  const res = await fetch(`${API_BASE}/startup/briefings?limit=${limit}`)
-  return handleResponse(res)
+  return apiFetch(`/startup/briefings?limit=${limit}`)
 }
 
 export async function getLatestWeeklyBriefing() {
-  const res = await fetch(`${API_BASE}/startup/briefings/latest`)
-  return handleResponse(res)
+  return apiFetch("/startup/briefings/latest")
 }
 
 export async function generateWeeklyBriefing(forceNew = true) {
-  const res = await fetch(`${API_BASE}/startup/briefings/generate?force_new=${forceNew}`, {
+  return apiFetch(`/startup/briefings/generate?force_new=${forceNew}`, {
     method: "POST",
   })
-  return handleResponse(res)
 }
 
 export async function getProductBlueprints(limit = 20) {
-  const res = await fetch(`${API_BASE}/product/blueprints?limit=${limit}`)
-  return handleResponse(res)
+  return apiFetch(`/product/blueprints?limit=${limit}`)
 }
 
 export async function createProductBlueprint(blueprintData) {
-  const res = await fetch(`${API_BASE}/product/blueprints`, {
+  return apiFetch("/product/blueprints", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(blueprintData),
   })
-  return handleResponse(res)
 }
 
 export async function getFounderProfile() {
-  const res = await fetch(`${API_BASE}/growth/profile`)
-  return handleResponse(res)
+  return apiFetch("/growth/profile")
 }
 
 export async function updateFounderProfile(profileData) {
-  const res = await fetch(`${API_BASE}/growth/profile`, {
+  return apiFetch("/growth/profile", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(profileData),
   })
-  return handleResponse(res)
 }
 
 export async function getSkillMatrix() {
-  const res = await fetch(`${API_BASE}/growth/skills`)
-  return handleResponse(res)
+  return apiFetch("/growth/skills")
 }
 
 export async function updateSkill(skillId, skillData) {
-  const res = await fetch(`${API_BASE}/growth/skills/${skillId}`, {
+  return apiFetch(`/growth/skills/${skillId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(skillData),
   })
-  return handleResponse(res)
 }
-
-

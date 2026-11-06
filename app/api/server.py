@@ -1,6 +1,7 @@
 """Phase 6.1 — FastAPI application server."""
 
 import logging
+import secrets
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -44,7 +45,7 @@ def create_app() -> FastAPI:
                 if auth_header.startswith("Bearer "):
                     client_key = auth_header[7:].strip()
 
-                if client_key != settings.API_KEY:
+                if not client_key or not secrets.compare_digest(client_key, settings.API_KEY):
                     return JSONResponse(
                         status_code=status.HTTP_401_UNAUTHORIZED,
                         content={"detail": "Unauthorized: Invalid or missing API key"},

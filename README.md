@@ -51,6 +51,8 @@ ai-tech-research-agent/
 
 ## Installation
 
+**Prerequisites:** Python 3.10+ (compatible with Python 3.10, 3.11, 3.12, and 3.14) and Node.js 18+.
+
 ```bash
 # Clone the repository
 git clone <repo-url>
@@ -60,11 +62,17 @@ cd ai-tech-research-agent
 python -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
-# Copy and adjust environment variables
-cp .env.example .env   # if available, otherwise edit .env directly
+# Copy and configure environment variables
+cp .env.example .env
+
+# Install and build frontend
+cd frontend
+npm install
+npm run build
+cd ..
 ```
 
 ## Environment variables
@@ -72,7 +80,12 @@ cp .env.example .env   # if available, otherwise edit .env directly
 | Variable | Default | Description |
 |---|---|---|
 | `APP_NAME` | `AI Tech Research Agent` | Application name |
-| `DATABASE_URL` | `sqlite:///./research.db` | SQLAlchemy database URL |
+| `DATABASE_URL` | `sqlite:///./research.db` | SQLAlchemy database URL (SQLite or PostgreSQL) |
+| `API_KEY` | `""` | API key for protected endpoints (leave empty for unauthenticated local development) |
+| `CORS_ORIGINS` | `http://localhost:5173,...` | Comma-separated list of allowed CORS origins |
+| `HOST` | `127.0.0.1` | Server binding host |
+| `PORT` | `8000` | Server binding port |
+| `ENVIRONMENT` | `development` | Runtime environment (`development`, `test`, `production`) |
 | `GITHUB_TOKEN` | `""` | GitHub personal access token (for higher rate limits) |
 | `RESEARCH_DAYS` | `14` | Lookback window for collection |
 | `GITHUB_RESULTS_PER_TOPIC` | `10` | Results per GitHub topic search |
@@ -81,7 +94,7 @@ cp .env.example .env   # if available, otherwise edit .env directly
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama endpoint |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Ollama model |
 
-> **Security:** Never commit real secrets. Do not include actual `GITHUB_TOKEN` values in version control.
+> **Security:** Never commit real secrets. Do not include actual `GITHUB_TOKEN` or `API_KEY` values in version control.
 
 ## Usage
 

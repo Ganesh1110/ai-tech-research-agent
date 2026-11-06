@@ -1,6 +1,6 @@
 import React, { useState } from "react"
-import { SettingsIcon, CheckCircleIcon, PlayIcon, SquareIcon, RefreshIcon } from "../components/common/Icons"
-import { runAgent, runWorkflow, runOrchestrate, runEvaluate } from "../services/api"
+import { SettingsIcon, CheckCircleIcon, PlayIcon, SquareIcon, RefreshIcon, ShieldCheckIcon } from "../components/common/Icons"
+import { runAgent, runWorkflow, runOrchestrate, runEvaluate, getStoredApiKey, setStoredApiKey } from "../services/api"
 
 export function Settings({
   healthData,
@@ -12,6 +12,17 @@ export function Settings({
   const [activeSection, setActiveSection] = useState("general")
   const [manualOutput, setManualOutput] = useState(null)
   const [isManualRunning, setIsManualRunning] = useState(false)
+
+  const [apiKeyInput, setApiKeyInput] = useState(getStoredApiKey())
+  const [authMsg, setAuthMsg] = useState("")
+
+  function handleSaveApiKey(e) {
+    e.preventDefault()
+    setStoredApiKey(apiKeyInput.trim())
+    setAuthMsg("API key saved! Requests will include this key.")
+    setTimeout(() => setAuthMsg(""), 4000)
+    if (onRefreshHealth) onRefreshHealth()
+  }
 
   const isRunning = schedulerStatus?.running ?? true
 
@@ -202,6 +213,63 @@ export function Settings({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Security & API Key Authentication Card */}
+          <div className="glass-panel" style={{ padding: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-bright)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <ShieldCheckIcon size={18} color="#38bdf8" />
+                  API Authentication & Security
+                </h3>
+                <p style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 2 }}>
+                  Configure client API key for protected FastAPI endpoints and remote deployments.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveApiKey} style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <input
+                type="password"
+                placeholder="Enter API_KEY (optional for local development)"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                style={{
+                  flex: "1 1 280px",
+                  padding: "8px 12px",
+                  background: "var(--bg-secondary)",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: 6,
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                }}
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: "8px 16px", fontSize: 13 }}>
+                Save API Key
+              </button>
+              {apiKeyInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiKeyInput("")
+                    setStoredApiKey("")
+                    setAuthMsg("API key cleared.")
+                    setTimeout(() => setAuthMsg(""), 3000)
+                  }}
+                  className="btn btn-secondary"
+                  style={{ padding: "8px 12px", fontSize: 13 }}
+                >
+                  Clear Key
+                </button>
+              )}
+            </form>
+
+            {authMsg && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "#4ade80" }}>
+                ✓ {authMsg}
+              </div>
+            )}
           </div>
         </div>
       ) : (
