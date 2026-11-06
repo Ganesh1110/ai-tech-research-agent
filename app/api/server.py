@@ -4,9 +4,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
+from app.database.db import create_tables
 
 
 def create_app() -> FastAPI:
+
+    create_tables()
 
     app = FastAPI(
 

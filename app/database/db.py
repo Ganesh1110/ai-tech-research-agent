@@ -75,6 +75,34 @@ def migrate_database():
 
         DocumentChunk,
 
+        KnowledgeGraphEntity,
+
+        KnowledgeGraphRelationship,
+
+    )
+
+    # Import autonomous models so they are registered on Base
+
+    from app.database.models import (  # noqa: F401
+
+        DiscoveryCycle,
+
+        DiscoveredItem,
+
+        DiscoveryScore,
+
+        Recommendation,
+
+        AgentJob,
+
+        BrainstormSession,
+
+        BrainstormMessage,
+
+        FeasibilityReport,
+
+        SourceCheck,
+
     )
 
     Base.metadata.create_all(bind=engine)

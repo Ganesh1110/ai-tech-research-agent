@@ -135,18 +135,136 @@ class HealthResponse(BaseModel):
     ollama_base_url: str
 
 
+# ---- Autonomous ------------------------------------------------------
+
+class AutonomousStartResponse(BaseModel):
+    started: bool
+    interval_seconds: int
+
+
+class AutonomousStatusResponse(BaseModel):
+    running: bool
+    interval_seconds: int
+    job_counts: Dict[str, int]
+
+
+class JobResponse(BaseModel):
+    id: int
+    job_type: str
+    worker_type: str
+    payload: Dict[str, Any]
+    status: str
+    created_at: Optional[str] = None
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    retry_count: int
+    max_retries: int
+
+
+class ProcessJobResponse(BaseModel):
+    processed: bool
+    job: Optional[JobResponse] = None
+
+
+class DiscoveryItemResponse(BaseModel):
+    id: int
+    external_id: str
+    source: str
+    title: str
+    description: str
+    url: str
+    category: str
+    overall_score: Optional[float] = None
+    recommendation_level: Optional[str] = None
+    first_seen_at: Optional[str] = None
+
+
+class DiscoveriesResponse(BaseModel):
+    items: List[DiscoveryItemResponse]
+    count: int
+
+
+class RecommendationItemResponse(BaseModel):
+    id: int
+    discovered_item_id: int
+    recommendation_level: str
+    reason: str
+    suggested_action: str
+    confidence: float
+    created_at: Optional[str] = None
+
+
+class RecommendationsResponse(BaseModel):
+    items: List[RecommendationItemResponse]
+    count: int
+
+
+class CycleResponse(BaseModel):
+    id: int
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+    duration_seconds: Optional[float] = None
+    items_collected: int
+    items_new: int
+    items_deduped: int
+    high_potential_count: int
+    failed_collectors: List[str]
+    status: str
+
+
+class CyclesResponse(BaseModel):
+    cycles: List[CycleResponse]
+    count: int
+
+
 __all__ = [
+
     "AgentRunRequest",
+
     "AgentRunResponse",
+
     "WorkflowRunRequest",
+
     "WorkflowRunResponse",
+
     "OrchestrateRunRequest",
+
     "OrchestrateRunResponse",
+
     "KbSearchRequest",
+
     "KbSearchResponse",
+
     "KbStatsResponse",
+
     "DocumentSummary",
+
     "DocumentsResponse",
+
     "EvaluationResponse",
+
     "HealthResponse",
+
+    "AutonomousStartResponse",
+
+    "AutonomousStatusResponse",
+
+    "JobResponse",
+
+    "ProcessJobResponse",
+
+    "DiscoveryItemResponse",
+
+    "DiscoveriesResponse",
+
+    "RecommendationItemResponse",
+
+    "RecommendationsResponse",
+
+    "CycleResponse",
+
+    "CyclesResponse",
+
 ]

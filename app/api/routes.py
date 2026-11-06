@@ -4,7 +4,7 @@ Exposes the research agent, workflows, orchestrator, knowledge base,
 and evaluation as REST endpoints.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Optional
 
 from fastapi import APIRouter, HTTPException
 
@@ -17,16 +17,26 @@ from app.agent.workflows import (
 from app.api.schemas import (
     AgentRunRequest,
     AgentRunResponse,
+    AutonomousStartResponse,
+    AutonomousStatusResponse,
+    CyclesResponse,
+    CycleResponse,
+    DiscoveriesResponse,
+    DiscoveryItemResponse,
     DocumentsResponse,
     DocumentSummary,
     EvaluationResponse,
     HealthResponse,
+    JobResponse,
     KbSearchRequest,
     KbSearchResponse,
     KbStatsResponse,
     KbSearchResult,
     OrchestrateRunRequest,
     OrchestrateRunResponse,
+    ProcessJobResponse,
+    RecommendationsResponse,
+    RecommendationItemResponse,
     WorkflowRunRequest,
     WorkflowRunResponse,
 )
@@ -36,6 +46,32 @@ from app.knowledge_base.refresh import KnowledgeRefresher
 from app.knowledge_base.storage import KnowledgeBaseStore
 from app.monitoring import Evaluator, TestCase
 from app.llm.ollama_client import OllamaClient
+from app.autonomous.job_queue import JobQueue
+from app.autonomous.scheduler import AutonomousScheduler
+from app.autonomous.worker import JobWorker
+from app.autonomous.discovery_manager import DiscoveryManager
+from app.autonomous.recommendation import RecommendationEngine
+from app.autonomous.coordinator import DiscoveryCoordinator
+
+# Module-level singleton scheduler (started via /autonomous/start)
+
+_scheduler: Optional[AutonomousScheduler] = None
+
+
+def _get_scheduler() -> AutonomousScheduler:
+
+    global _scheduler
+
+    if _scheduler is None:
+
+        _scheduler = AutonomousScheduler()
+
+    return _scheduler
+
+
+def _get_worker() -> JobWorker:
+
+    return JobWorker()
 
 router = APIRouter()
 
@@ -479,6 +515,168 @@ def run_evaluate() -> EvaluationResponse:
         average_score=average_score,
 
         results=eval_results,
+
+    )
+
+
+# ---- Autonomous ------------------------------------------------------
+
+@router.post("/autonomous/start", response_model=AutonomousStartResponse)
+def autonomous_start() -> AutonomousStartResponse:
+
+    scheduler = _get_scheduler()
+
+    if scheduler.is_running():
+
+        return AutonomousStartResponse(
+
+            started=False,
+
+            interval_seconds=scheduler.interval_seconds,
+
+        )
+
+    scheduler.start()
+
+    return AutonomousStartResponse(
+
+        started=True,
+
+        interval_seconds=scheduler.interval_seconds,
+
+    )
+
+
+@router.post("/autonomous/stop", response_model=AutonomousStartResponse)
+def autonomous_stop() -> AutonomousStartResponse:
+
+    scheduler = _get_scheduler()
+
+    was_running = scheduler.is_running()
+
+    scheduler.stop()
+
+    return AutonomousStartResponse(
+
+        started=was_running,
+
+        interval_seconds=scheduler.interval_seconds,
+
+    )
+
+
+@router.get("/autonomous/status", response_model=AutonomousStatusResponse)
+def autonomous_status() -> AutonomousStatusResponse:
+
+    scheduler = _get_scheduler()
+
+    jq = JobQueue()
+
+    return AutonomousStatusResponse(
+
+        running=scheduler.is_running(),
+
+        interval_seconds=scheduler.interval_seconds,
+
+        job_counts=jq.count_by_status(),
+
+    )
+
+
+@router.get("/autonomous/jobs", response_model=List[JobResponse])
+def autonomous_jobs(
+
+    status: Optional[str] = None,
+
+    worker_type: Optional[str] = None,
+
+    limit: int = 50,
+
+) -> List[JobResponse]:
+
+    jq = JobQueue()
+
+    jobs = jq.list_jobs(status=status, worker_type=worker_type, limit=limit)
+
+    return [JobResponse(**j) for j in jobs]
+
+
+@router.post("/autonomous/process", response_model=ProcessJobResponse)
+def autonomous_process() -> ProcessJobResponse:
+
+    worker = _get_worker()
+
+    processed = worker.process_next()
+
+    job = None
+
+    if processed:
+
+        recent = worker.job_queue.list_jobs(limit=1)
+
+        if recent:
+
+            job = JobResponse(**recent[0])
+
+    return ProcessJobResponse(processed=processed, job=job)
+
+
+@router.get("/autonomous/discoveries", response_model=DiscoveriesResponse)
+def autonomous_discoveries(
+
+    limit: int = 20,
+
+    min_score: float = 0.0,
+
+) -> DiscoveriesResponse:
+
+    dm = DiscoveryManager()
+
+    items = dm.get_top_items(limit=limit, min_score=min_score)
+
+    return DiscoveriesResponse(
+
+        items=[DiscoveryItemResponse(**i) for i in items],
+
+        count=len(items),
+
+    )
+
+
+@router.get("/autonomous/recommendations", response_model=RecommendationsResponse)
+def autonomous_recommendations(
+
+    level: Optional[str] = None,
+
+    limit: int = 50,
+
+) -> RecommendationsResponse:
+
+    engine = RecommendationEngine()
+
+    items = engine.get_recommendations(level=level, limit=limit)
+
+    return RecommendationsResponse(
+
+        items=[RecommendationItemResponse(**i) for i in items],
+
+        count=len(items),
+
+    )
+
+
+@router.get("/autonomous/cycles", response_model=CyclesResponse)
+def autonomous_cycles(limit: int = 20) -> CyclesResponse:
+
+    coordinator = DiscoveryCoordinator(JobQueue())
+
+    cycles = coordinator.get_cycle_history(limit=limit)
+
+    return CyclesResponse(
+
+        cycles=[CycleResponse(**c) for c in cycles],
+
+        count=len(cycles),
 
     )
 

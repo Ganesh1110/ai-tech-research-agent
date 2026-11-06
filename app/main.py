@@ -31,6 +31,9 @@ from app.knowledge_base.refresh import KnowledgeRefresher
 from app.knowledge_base.storage import KnowledgeBaseStore
 from app.monitoring import Evaluator, TestCase
 from app.services.intelligence import run_intelligence
+from app.autonomous.scheduler import AutonomousScheduler
+from app.autonomous.job_queue import JobQueue
+from app.autonomous.worker import JobWorker
 from app.services.reports import generate_daily_report, format_report_text
 
 from app.collectors.github import (
@@ -338,6 +341,12 @@ def main():
         "--kb-stats",
         action="store_true",
         help="Show knowledge base statistics"
+    )
+
+    parser.add_argument(
+        "--autonomous",
+        action="store_true",
+        help="Run autonomous discovery engine (scheduler + job workers)"
     )
 
     args = parser.parse_args()
@@ -911,6 +920,54 @@ def main():
         print("=" * 60)
 
         store.close()
+
+    elif args.autonomous:
+
+        scheduler = AutonomousScheduler()
+
+        worker = JobWorker()
+
+        print("Starting autonomous discovery engine...")
+
+        print("Scheduler interval: 300 seconds (5 minutes)")
+
+        print("Categories:", ", ".join(
+
+            [
+
+                "github", "mcp_skills", "ai_models", "datasets",
+
+                "research_papers", "developer_tools", "react_native",
+
+                "open_source", "ai_automation",
+
+            ]
+
+        ))
+
+        print("Press Ctrl+C to stop.")
+
+        scheduler.start()
+
+        try:
+
+            while True:
+
+                processed = worker.process_next(max_jobs=5)
+
+                if processed == 0:
+
+                    import time
+
+                    time.sleep(2)
+
+        except KeyboardInterrupt:
+
+            print("\nStopping autonomous engine...")
+
+            scheduler.stop()
+
+            print("Stopped.")
 
     else:
 
