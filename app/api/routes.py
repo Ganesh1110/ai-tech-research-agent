@@ -39,9 +39,12 @@ from app.api.schemas import (
     RecommendationItemResponse,
     WorkflowRunRequest,
     WorkflowRunResponse,
+    FrameworkItem,
+    FrameworksResponse,
 )
 from app.config import settings
 from app.database.db import SessionLocal
+from app.data.tech_frameworks import list_categories, list_frameworks
 from app.knowledge_base.refresh import KnowledgeRefresher
 from app.knowledge_base.storage import KnowledgeBaseStore
 from app.monitoring import Evaluator, TestCase
@@ -97,6 +100,24 @@ def health() -> HealthResponse:
         ollama_model=settings.OLLAMA_MODEL,
 
         ollama_base_url=settings.OLLAMA_BASE_URL,
+
+    )
+
+
+# ---- Frameworks --------------------------------------------------------
+
+@router.get("/frameworks", response_model=FrameworksResponse)
+def list_tech_frameworks() -> FrameworksResponse:
+
+    frameworks = list_frameworks()
+
+    return FrameworksResponse(
+
+        frameworks=[FrameworkItem(**f) for f in frameworks],
+
+        categories=list_categories(),
+
+        count=len(frameworks),
 
     )
 

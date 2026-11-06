@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { SearchIcon, ExternalLinkIcon, SparklesIcon, CheckCircleIcon, FlameIcon } from "./Icons"
+import { fetchFrameworks } from "../../services/api"
 
-export const TECH_FRAMEWORKS_DATA = [
+// Fallback static data used when the backend API is unavailable.
+export const STATIC_FRAMEWORKS_DATA = [
   // --- 1. Agentic AI & Autonomous Systems ---
   {
     id: "langgraph",
@@ -306,14 +308,48 @@ export const TECH_FRAMEWORKS_DATA = [
 export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [search, setSearch] = useState("")
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const categories = useMemo(() => {
-    const set = new Set(TECH_FRAMEWORKS_DATA.map((item) => item.category))
-    return ["all", ...Array.from(set)]
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        const result = await fetchFrameworks()
+        if (!cancelled) {
+          setData(result.frameworks || [])
+          setError(null)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message)
+          setData(STATIC_FRAMEWORKS_DATA)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
+  const frameworks = useMemo(() => data || STATIC_FRAMEWORKS_DATA, [data])
+
+  const categories = useMemo(() => {
+    const set = new Set(frameworks.map((item) => item.category))
+    return ["all", ...Array.from(set)]
+  }, [frameworks])
+
   const filtered = useMemo(() => {
-    return TECH_FRAMEWORKS_DATA.filter((item) => {
+    return frameworks.filter((item) => {
       const matchCat = selectedCategory === "all" || item.category === selectedCategory
       const matchSearch =
         !search ||
@@ -323,7 +359,18 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
         item.bestFor.toLowerCase().includes(search.toLowerCase())
       return matchCat && matchSearch
     })
-  }, [selectedCategory, search])
+  }, [selectedCategory, search, frameworks])
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40, color: "var(--text-dim)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <div style={{ width: 20, height: 20, border: "2px solid var(--border-subtle)", borderTopColor: "var(--accent-purple-light)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <span>Loading frameworks directory…</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -380,6 +427,13 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
           />
         </div>
       </div>
+
+      {error && !loading && (
+        <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#fca5a5", display: "flex", alignItems: "center", gap: 8 }}>
+          <span>⚠️</span>
+          <span>Using cached framework data (API unavailable): {error}</span>
+        </div>
+      )}
 
       {/* Grid of Frameworks */}
       <div

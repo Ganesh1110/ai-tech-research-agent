@@ -64,6 +64,28 @@ class OrchestrateRunResponse(BaseModel):
     created_at: Optional[str] = None
 
 
+# ---- Frameworks (Tech Frameworks Directory) --------------------------
+
+class FrameworkItem(BaseModel):
+    id: str
+    category: str
+    name: str
+    framework: str
+    runtime: str
+    maturity: str
+    maturityColor: str
+    tagline: str
+    keyFeatures: List[str]
+    bestFor: str
+    docsUrl: str
+
+
+class FrameworksResponse(BaseModel):
+    frameworks: List[FrameworkItem]
+    categories: List[str]
+    count: int
+
+
 # ---- Knowledge Base --------------------------------------------------
 
 class KbSearchRequest(BaseModel):
@@ -244,6 +266,10 @@ __all__ = [
     "DocumentsResponse",
 
     "EvaluationResponse",
+
+    "FrameworkItem",
+
+    "FrameworksResponse",
 
     "HealthResponse",
 

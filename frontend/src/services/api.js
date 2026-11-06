@@ -136,3 +136,9 @@ export async function runEvaluate() {
   return handleResponse(res)
 }
 
+// Tech Frameworks Directory
+export async function fetchFrameworks() {
+  const res = await fetch(`${API_BASE}/frameworks`)
+  return handleResponse(res)
+}
+
