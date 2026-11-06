@@ -216,7 +216,14 @@ export default function App() {
             />
           )}
 
-          {activeTab === "trending" && <Trending discoveries={discoveries} />}
+          {activeTab === "trending" && (
+            <Trending
+              onBrainstormWithFramework={(prompt) => {
+                setBrainstormPrompt(prompt)
+                setActiveTab("brainstorming")
+              }}
+            />
+          )}
 
           {activeTab === "models" && <ModelsDatasets />}
 

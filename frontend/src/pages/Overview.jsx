@@ -831,7 +831,7 @@ export function Overview({
 
           {/* Prompt Chips */}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
-            {["Check this MCP server", "Architecture idea", "New tools?"].map((chip) => (
+            {["Compare LangGraph vs CrewAI", "FastMCP server setup", "Ollama vs vLLM", "React Native AI"].map((chip) => (
               <button
                 key={chip}
                 onClick={() => handleChipClick(chip)}

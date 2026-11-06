@@ -18,7 +18,7 @@ import { Sparkline } from "../common/Sparkline"
 export const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: HomeIcon },
   { id: "discoveries", label: "Discoveries", icon: SearchIcon },
-  { id: "trending", label: "Trending", icon: FlameIcon },
+  { id: "trending", label: "Tech & Frameworks", icon: FlameIcon },
   { id: "models", label: "AI Models & Data", icon: CubeIcon },
   { id: "papers", label: "Research Papers", icon: PaperIcon },
   { id: "skills", label: "Skills & MCP", icon: PuzzleIcon },

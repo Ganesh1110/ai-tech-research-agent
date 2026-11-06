@@ -1,7 +1,10 @@
-import React from "react"
+import React, { useState } from "react"
 import { FlameIcon, GithubIcon, ExternalLinkIcon, StarIcon, SparklesIcon } from "../components/common/Icons"
+import { TechFrameworksDirectory } from "../components/common/TechFrameworksDirectory"
 
-export function Trending({ discoveries = [] }) {
+export function Trending({ onBrainstormWithFramework }) {
+  const [activeTab, setActiveTab] = useState("frameworks") // 'frameworks' or 'repos'
+
   const trendingRepos = [
     {
       name: "modelcontextprotocol/servers",
@@ -39,6 +42,24 @@ export function Trending({ discoveries = [] }) {
       desc: "Get up and running with Llama, Mistral, and other large language models locally.",
       url: "https://github.com/ollama/ollama",
     },
+    {
+      name: "langchain-ai/langgraph",
+      stars: "11.5k",
+      forks: "1.8k",
+      growth: "+190 stars/day",
+      category: "Agentic AI",
+      desc: "Build resilient language agents as graphs with stateful multi-actor communication.",
+      url: "https://github.com/langchain-ai/langgraph",
+    },
+    {
+      name: "asg017/sqlite-vec",
+      stars: "5.8k",
+      forks: "290",
+      growth: "+140 stars/day",
+      category: "Vector & RAG",
+      desc: "A vector search SQLite extension that runs anywhere, with zero external infrastructure.",
+      url: "https://github.com/asg017/sqlite-vec",
+    },
   ]
 
   const trendingTopics = [
@@ -51,132 +72,185 @@ export function Trending({ discoveries = [] }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-bright)" }}>
-          Trending Technologies & Repositories
-        </h2>
-        <p style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 2 }}>
-          Rapidly gaining velocity across GitHub, Hugging Face, arXiv and AI communities
-        </p>
-      </div>
+      {/* Page Title & View Toggle */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-bright)", display: "flex", alignItems: "center", gap: 10 }}>
+            <FlameIcon size={22} color="var(--accent-amber)" />
+            <span>Technologies & Respective Frameworks</span>
+          </h2>
+          <p style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 2 }}>
+            Curated matrix of currently available technologies, runtime frameworks, and trending repositories
+          </p>
+        </div>
 
-      {/* Velocity Topics Chips */}
-      <div className="glass-panel" style={{ padding: "18px 22px" }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-bright)", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-          <FlameIcon size={16} color="var(--accent-amber)" />
-          <span>High-Velocity Research Categories</span>
-        </h3>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {trendingTopics.map((topic, i) => (
-            <div
-              key={i}
-              style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: 12,
-                padding: "8px 14px",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)" }}>
-                {topic.name}
-              </span>
-              <span style={{ fontSize: 11, color: "var(--accent-emerald)", fontWeight: 700 }}>
-                {topic.growth}
-              </span>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {topic.count}
-              </span>
-            </div>
-          ))}
+        {/* Tab switch */}
+        <div style={{ display: "flex", background: "var(--bg-card)", padding: 4, borderRadius: 10, border: "1px solid var(--border-subtle)" }}>
+          <button
+            onClick={() => setActiveTab("frameworks")}
+            style={{
+              background: activeTab === "frameworks" ? "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)" : "transparent",
+              color: activeTab === "frameworks" ? "#ffffff" : "var(--text-dim)",
+              border: "none",
+              padding: "7px 16px",
+              borderRadius: 8,
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            Technology & Frameworks Matrix
+          </button>
+          <button
+            onClick={() => setActiveTab("repos")}
+            style={{
+              background: activeTab === "repos" ? "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)" : "transparent",
+              color: activeTab === "repos" ? "#ffffff" : "var(--text-dim)",
+              border: "none",
+              padding: "7px 16px",
+              borderRadius: 8,
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            Trending Repositories & Velocity ({trendingRepos.length})
+          </button>
         </div>
       </div>
 
-      {/* Trending Repositories Grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-          gap: 18,
-        }}
-      >
-        {trendingRepos.map((repo, i) => (
-          <div
-            key={i}
-            className="glass-panel"
-            style={{
-              padding: "22px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <GithubIcon size={20} color="var(--text-bright)" />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--accent-cyan)" }}>
-                    {repo.name}
-                  </span>
-                </div>
-                <span
+      {activeTab === "frameworks" ? (
+        <TechFrameworksDirectory
+          onBrainstormWithFramework={(item) => {
+            const prompt = `Evaluate the ${item.name} framework (${item.framework}) for building autonomous research tools. What are its architectural strengths, tradeoffs compared to alternatives, and local deployment viability?`
+            if (onBrainstormWithFramework) {
+              onBrainstormWithFramework(prompt)
+            }
+          }}
+        />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+          {/* Velocity Topics Chips */}
+          <div className="glass-panel" style={{ padding: "18px 22px" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-bright)", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              <FlameIcon size={16} color="var(--accent-amber)" />
+              <span>High-Velocity Research Categories</span>
+            </h3>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              {trendingTopics.map((topic, i) => (
+                <div
+                  key={i}
                   style={{
-                    background: "rgba(16, 185, 129, 0.15)",
-                    color: "var(--accent-emerald)",
-                    border: "1px solid rgba(16, 185, 129, 0.3)",
-                    padding: "2px 8px",
-                    borderRadius: 10,
-                    fontSize: 11,
-                    fontWeight: 600,
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: 12,
+                    padding: "8px 14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
                   }}
                 >
-                  {repo.growth}
-                </span>
-              </div>
-
-              <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.5, marginBottom: 16 }}>
-                {repo.desc}
-              </p>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderTop: "1px solid var(--border-subtle)",
-                paddingTop: 12,
-                fontSize: 12,
-                color: "var(--text-muted)",
-              }}
-            >
-              <div style={{ display: "flex", gap: 14 }}>
-                <span>★ <strong style={{ color: "var(--text-main)" }}>{repo.stars}</strong></span>
-                <span>⑂ <strong style={{ color: "var(--text-main)" }}>{repo.forks}</strong></span>
-              </div>
-
-              <a
-                href={repo.url}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  color: "var(--accent-purple-light)",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                }}
-              >
-                <span>Inspect Repo</span>
-                <ExternalLinkIcon size={12} />
-              </a>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)" }}>
+                    {topic.name}
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--accent-emerald)", fontWeight: 700 }}>
+                    {topic.growth}
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    {topic.count}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+
+          {/* Trending Repositories Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+              gap: 18,
+            }}
+          >
+            {trendingRepos.map((repo, i) => (
+              <div
+                key={i}
+                className="glass-panel"
+                style={{
+                  padding: "22px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <GithubIcon size={20} color="var(--text-bright)" />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--accent-cyan)" }}>
+                        {repo.name}
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        background: "rgba(16, 185, 129, 0.15)",
+                        color: "var(--accent-emerald)",
+                        border: "1px solid rgba(16, 185, 129, 0.3)",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        fontSize: 11,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {repo.growth}
+                    </span>
+                  </div>
+
+                  <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.5, marginBottom: 16 }}>
+                    {repo.desc}
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderTop: "1px solid var(--border-subtle)",
+                    paddingTop: 12,
+                    fontSize: 12,
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 14 }}>
+                    <span>★ <strong style={{ color: "var(--text-main)" }}>{repo.stars}</strong></span>
+                    <span>⑂ <strong style={{ color: "var(--text-main)" }}>{repo.forks}</strong></span>
+                  </div>
+
+                  <a
+                    href={repo.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      color: "var(--accent-purple-light)",
+                      textDecoration: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span>Inspect Repo</span>
+                    <ExternalLinkIcon size={12} />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
