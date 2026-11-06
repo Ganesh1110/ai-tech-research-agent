@@ -365,6 +365,13 @@ class AutonomousAgent:
 
             final_answer_text = decision.get("final_answer", "")
 
+            if not isinstance(final_answer_text, str):
+
+                import json
+
+                final_answer_text = json.dumps(final_answer_text, indent=2)
+
+
             tool_calls_data = decision.get("tool_calls", [])
 
             tool_calls = []

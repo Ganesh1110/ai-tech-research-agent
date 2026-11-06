@@ -22,6 +22,10 @@ from app.database.models import (
 )
 
 from app.agent.agent import AutonomousAgent
+from app.agent.workflows import (
+    TechnologyDiscoveryWorkflow,
+    FrameworkComparisonWorkflow,
+)
 from app.services.intelligence import run_intelligence
 from app.services.reports import generate_daily_report, format_report_text
 
@@ -293,6 +297,20 @@ def main():
         help="Research objective for the autonomous agent"
     )
 
+    parser.add_argument(
+        "--workflow",
+        type=str,
+        default="",
+        help="Workflow type to run (technology_discovery, framework_comparison)"
+    )
+
+    parser.add_argument(
+        "--criteria",
+        type=str,
+        default="",
+        help="Optional comparison criteria for framework_comparison workflow"
+    )
+
     args = parser.parse_args()
 
     create_tables()
@@ -396,6 +414,98 @@ def main():
                     if url:
 
                         print(f"  {url}")
+
+    elif args.workflow:
+
+        if not args.objective:
+
+            logger.error(
+                "--objective is required with --workflow"
+            )
+
+            parser.print_help()
+
+        else:
+
+            workflow_map = {
+
+                "technology_discovery": TechnologyDiscoveryWorkflow,
+
+                "framework_comparison": FrameworkComparisonWorkflow,
+
+            }
+
+            workflow_cls = workflow_map.get(args.workflow)
+
+            if not workflow_cls:
+
+                logger.error(
+
+                    "Unknown workflow type: %s. Available: %s",
+
+                    args.workflow,
+
+                    ", ".join(workflow_map.keys()),
+
+                )
+
+                parser.print_help()
+
+            else:
+
+                context = {}
+
+                if args.criteria:
+
+                    context["criteria"] = args.criteria
+
+                agent = AutonomousAgent()
+
+                workflow = workflow_cls(agent=agent)
+
+                result = workflow.run(objective=args.objective, context=context)
+
+                print("\n" + "=" * 60)
+
+                print(f"WORKFLOW RESULT: {result.workflow_type.upper()}")
+
+                print("=" * 60)
+
+                print(f"Objective: {result.objective}")
+
+                print(f"Steps completed: {len(result.steps)}")
+
+                print(f"Sources: {len(result.sources)}")
+
+                print("=" * 60)
+
+                print("\nFINAL ANSWER:\n")
+
+                print(result.final_answer)
+
+                print("\n" + "=" * 60)
+
+                if result.sources:
+
+                    print("\nSOURCES:")
+
+                    for idx, source in enumerate(result.sources, 1):
+
+                        title = getattr(source, "title", "Unknown")
+
+                        src = getattr(source, "source", "unknown")
+
+                        score = getattr(source, "relevance_score", None)
+
+                        score_str = f" (relevance: {score}/100)" if score else ""
+
+                        url = getattr(source, "url", "")
+
+                        print(f"[{idx}] {title} [{src}]{score_str}")
+
+                        if url:
+
+                            print(f"    {url}")
 
     else:
 
