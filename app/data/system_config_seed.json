@@ -1,0 +1,16 @@
+[
+  {
+    "config_key": "brainstorm_welcome_message",
+    "config_value": "Hello! I am your AI Tech Research Agent. I continuously explore GitHub, arXiv, and developer ecosystems. Ask me to brainstorm new system architectures, evaluate MCP servers, analyze repository technical feasibility, or synthesize research discoveries.",
+    "config_type": "string",
+    "description": "Welcome message shown in the Brainstorming chat",
+    "is_active": true
+  },
+  {
+    "config_key": "brainstorm_reset_message",
+    "config_value": "Brainstorming workspace reset. What technology, architecture, or repository should we explore next?",
+    "config_type": "string",
+    "description": "Message shown after clearing brainstorming history",
+    "is_active": true
+  }
+]

@@ -169,11 +169,11 @@ export default function App() {
 
   // Aggregate high level statistics for KPI cards
   const stats = {
-    totalDiscoveries: discoveries.length > 0 ? discoveries.length : 1284,
-    highPotential: discoveries.filter((d) => (d.overall_score || 0) >= 85).length || 86,
-    newToday: cycles[0]?.items_new || 24,
-    sourceValidity: 92,
-    totalDocuments: kbStatsData?.total_documents ? (kbStatsData.total_documents / 1000).toFixed(1) : "3.2",
+    totalDiscoveries: discoveries.length > 0 ? discoveries.length : 0,
+    highPotential: discoveries.filter((d) => (d.overall_score || 0) >= 85).length,
+    newToday: cycles[0]?.items_new || 0,
+    sourceValidity: 0,
+    totalDocuments: kbStatsData?.total_documents ? (kbStatsData.total_documents / 1000).toFixed(1) : "0",
   }
 
   return (

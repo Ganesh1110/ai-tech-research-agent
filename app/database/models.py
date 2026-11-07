@@ -81,6 +81,214 @@ class TechFramework(Base):
     )
 
 
+class TechResource(Base):
+
+    """AI models, datasets, and benchmarks — DB-backed, no hardcoded content."""
+
+    __tablename__ = "tech_resources"
+
+    __table_args__ = (
+        Index("idx_tech_resource_type", "resource_type"),
+        Index("idx_tech_resource_active", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    resource_id: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    resource_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )  # model, dataset, benchmark
+
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    org: Mapped[str] = mapped_column(String(200), default="")
+
+    context: Mapped[str] = mapped_column(String(200), default="")
+
+    strengths: Mapped[str] = mapped_column(Text, default="")
+
+    suitability: Mapped[str] = mapped_column(Text, default="")
+
+    benchmark: Mapped[str] = mapped_column(String(200), default="")
+
+    size: Mapped[str] = mapped_column(String(200), default="")
+
+    desc: Mapped[str] = mapped_column(Text, default="")
+
+    url: Mapped[str] = mapped_column(String(500), default="")
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class TrendingItem(Base):
+
+    """Trending repositories and topics — DB-backed, no hardcoded content."""
+
+    __tablename__ = "trending_items"
+
+    __table_args__ = (
+        Index("idx_trending_item_type", "item_type"),
+        Index("idx_trending_item_active", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    item_id: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    item_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )  # repo, topic
+
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    stars: Mapped[str] = mapped_column(String(50), default="")
+
+    forks: Mapped[str] = mapped_column(String(50), default="")
+
+    growth: Mapped[str] = mapped_column(String(100), default="")
+
+    category: Mapped[str] = mapped_column(String(100), default="")
+
+    desc: Mapped[str] = mapped_column(Text, default="")
+
+    count: Mapped[str] = mapped_column(String(100), default="")
+
+    url: Mapped[str] = mapped_column(String(500), default="")
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class DashboardMetric(Base):
+
+    """Dashboard KPI / chart metrics — DB-backed, no hardcoded content."""
+
+    __tablename__ = "dashboard_metrics"
+
+    __table_args__ = (
+        Index("idx_dashboard_metric_name", "metric_name"),
+        Index("idx_dashboard_metric_active", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    metric_name: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    metric_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )  # sparkline, line, donut, kpi
+
+    label: Mapped[str] = mapped_column(String(200), default="")
+
+    value: Mapped[int] = mapped_column(Integer, default=0)
+
+    color: Mapped[str] = mapped_column(String(20), default="#6366f1")
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class SystemConfig(Base):
+
+    """System-wide configuration key/value store — DB-backed, no hardcoded config."""
+
+    __tablename__ = "system_config"
+
+    __table_args__ = (
+        Index("idx_system_config_key", "config_key"),
+        Index("idx_system_config_active", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    config_key: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    config_value: Mapped[str] = mapped_column(Text, default="")
+
+    config_type: Mapped[str] = mapped_column(String(50), default="string")
+
+    description: Mapped[str] = mapped_column(Text, default="")
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
 class ResearchItem(Base):
 
     __tablename__ = "research_items"
@@ -855,6 +1063,7 @@ class GlobalProblem(Base):
         Index("idx_problem_category", "category"),
         Index("idx_problem_status", "status"),
         Index("idx_problem_composite_score", "composite_pain_score"),
+        Index("idx_problem_source_url", "source_url"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -894,6 +1103,14 @@ class GlobalProblem(Base):
 __all__ = [
 
     "TechFramework",
+
+    "TechResource",
+
+    "SystemConfig",
+
+    "TrendingItem",
+
+    "DashboardMetric",
 
     "ResearchItem",
 

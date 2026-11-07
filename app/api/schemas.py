@@ -88,6 +88,70 @@ class FrameworksResponse(BaseModel):
     count: int
 
 
+# ---- Content: Tech Resources, Trending Items, Dashboard Metrics ----------
+
+class TechResourceItem(BaseModel):
+    id: str
+    type: str
+    name: str
+    org: str = ""
+    context: str = ""
+    strengths: str = ""
+    suitability: str = ""
+    benchmark: str = ""
+    size: str = ""
+    desc: str = ""
+    url: str = ""
+    is_active: bool = True
+
+
+class TechResourceListResponse(BaseModel):
+    items: List[TechResourceItem]
+    total: int
+
+
+class TrendingItemResponse(BaseModel):
+    id: str
+    type: str
+    name: str
+    stars: str = ""
+    forks: str = ""
+    growth: str = ""
+    category: str = ""
+    desc: str = ""
+    count: str = ""
+    url: str = ""
+    is_active: bool = True
+
+
+class TrendingItemListResponse(BaseModel):
+    items: List[TrendingItemResponse]
+    total: int
+
+
+class DashboardMetricItem(BaseModel):
+    id: str
+    name: str
+    type: str
+    label: str = ""
+    value: int = 0
+    color: str = "#6366f1"
+    is_active: bool = True
+
+
+class DashboardMetricListResponse(BaseModel):
+    items: List[DashboardMetricItem]
+    total: int
+
+
+class ProblemCategoriesResponse(BaseModel):
+    categories: List[str]
+
+
+class ProblemSourcesResponse(BaseModel):
+    sources: List[str]
+
+
 # ---- Knowledge Base --------------------------------------------------
 
 class KbSearchRequest(BaseModel):
@@ -550,5 +614,21 @@ __all__ = [
     "CreateProblemRequest",
 
     "UpdateProblemRequest",
+
+    "TechResourceItem",
+
+    "TechResourceListResponse",
+
+    "TrendingItemResponse",
+
+    "TrendingItemListResponse",
+
+    "DashboardMetricItem",
+
+    "DashboardMetricListResponse",
+
+    "ProblemCategoriesResponse",
+
+    "ProblemSourcesResponse",
 
 ]

@@ -1,0 +1,162 @@
+[
+  {
+    "metric_name": "sparkline-activity",
+    "metric_type": "sparkline",
+    "label": "Activity",
+    "value": 12,
+    "color": "#8b5cf6",
+    "is_active": true
+  },
+  {
+    "metric_name": "sparkline-activity-2",
+    "metric_type": "sparkline",
+    "label": "Activity",
+    "value": 14,
+    "color": "#8b5cf6",
+    "is_active": true
+  },
+  {
+    "metric_name": "sparkline-activity-3",
+    "metric_type": "sparkline",
+    "label": "Activity",
+    "value": 11,
+    "color": "#8b5cf6",
+    "is_active": true
+  },
+  {
+    "metric_name": "sparkline-activity-4",
+    "metric_type": "sparkline",
+    "label": "Activity",
+    "value": 16,
+    "color": "#8b5cf6",
+    "is_active": true
+  },
+  {
+    "metric_name": "sparkline-activity-5",
+    "metric_type": "sparkline",
+    "label": "Activity",
+    "value": 18,
+    "color": "#8b5cf6",
+    "is_active": true
+  },
+  {
+    "metric_name": "sparkline-activity-6",
+    "metric_type": "sparkline",
+    "label": "Activity",
+    "value": 15,
+    "color": "#8b5cf6",
+    "is_active": true
+  },
+  {
+    "metric_name": "sparkline-activity-7",
+    "metric_type": "sparkline",
+    "label": "Activity",
+    "value": 22,
+    "color": "#8b5cf6",
+    "is_active": true
+  },
+  {
+    "metric_name": "sparkline-activity-8",
+    "metric_type": "sparkline",
+    "label": "Activity",
+    "value": 26,
+    "color": "#8b5cf6",
+    "is_active": true
+  },
+  {
+    "metric_name": "line-mon",
+    "metric_type": "line",
+    "label": "Mon",
+    "value": 15,
+    "color": "#3b82f6",
+    "is_active": true
+  },
+  {
+    "metric_name": "line-tue",
+    "metric_type": "line",
+    "label": "Tue",
+    "value": 45,
+    "color": "#3b82f6",
+    "is_active": true
+  },
+  {
+    "metric_name": "line-wed",
+    "metric_type": "line",
+    "label": "Wed",
+    "value": 38,
+    "color": "#3b82f6",
+    "is_active": true
+  },
+  {
+    "metric_name": "line-thu",
+    "metric_type": "line",
+    "label": "Thu",
+    "value": 72,
+    "color": "#3b82f6",
+    "is_active": true
+  },
+  {
+    "metric_name": "line-fri",
+    "metric_type": "line",
+    "label": "Fri",
+    "value": 50,
+    "color": "#3b82f6",
+    "is_active": true
+  },
+  {
+    "metric_name": "line-sat",
+    "metric_type": "line",
+    "label": "Sat",
+    "value": 65,
+    "color": "#3b82f6",
+    "is_active": true
+  },
+  {
+    "metric_name": "line-sun",
+    "metric_type": "line",
+    "label": "Sun",
+    "value": 85,
+    "color": "#3b82f6",
+    "is_active": true
+  },
+  {
+    "metric_name": "donut-research-papers",
+    "metric_type": "donut",
+    "label": "Research Papers",
+    "value": 35,
+    "color": "#10b981",
+    "is_active": true
+  },
+  {
+    "metric_name": "donut-github-projects",
+    "metric_type": "donut",
+    "label": "GitHub Projects",
+    "value": 40,
+    "color": "#a855f7",
+    "is_active": true
+  },
+  {
+    "metric_name": "donut-tools-skills",
+    "metric_type": "donut",
+    "label": "Tools & Skills",
+    "value": 15,
+    "color": "#3b82f6",
+    "is_active": true
+  },
+  {
+    "metric_name": "donut-datasets",
+    "metric_type": "donut",
+    "label": "Datasets",
+    "value": 10,
+    "color": "#ec4899",
+    "is_active": true
+  },
+  {
+    "metric_name": "kpi-total-sources",
+    "metric_type": "kpi",
+    "label": "Total Sources",
+    "value": 3200,
+    "color": "#00f0ff",
+    "is_active": true
+  }
+]

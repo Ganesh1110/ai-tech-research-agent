@@ -19,6 +19,7 @@ import { WeeklyBriefingHero } from "../components/overview/WeeklyBriefingHero"
 import { KpiCards } from "../components/overview/KpiCards"
 import { QuickBrainstormBar } from "../components/overview/QuickBrainstormBar"
 import { getLatestWeeklyBriefing, generateWeeklyBriefing } from "../services/api"
+import { fetchDashboardMetrics } from "../services/api"
 
 export function Overview({
   stats,
@@ -36,6 +37,7 @@ export function Overview({
 
   const [briefing, setBriefing] = useState(null)
   const [briefingLoading, setBriefingLoading] = useState(false)
+  const [donutMetrics, setDonutMetrics] = useState([])
 
   useEffect(() => {
     let isMounted = true
@@ -44,6 +46,16 @@ export function Overview({
         if (isMounted && data) setBriefing(data)
       })
       .catch((err) => console.warn("Failed to load weekly briefing:", err))
+
+    const loadMetrics = async () => {
+      try {
+        const res = await fetchDashboardMetrics("donut")
+        if (isMounted) setDonutMetrics(res.items || [])
+      } catch (err) {
+        console.warn("Failed to load dashboard metrics:", err)
+      }
+    }
+    loadMetrics()
     return () => {
       isMounted = false
     }
@@ -64,59 +76,12 @@ export function Overview({
   // Display top items
   const displayDiscoveries = discoveries.length > 0
     ? discoveries.slice(0, 3)
-    : [
-        {
-          id: 1,
-          title: "GitHub Copilot Enterprise Multi-Agent",
-          category: "Developer Tools",
-          overall_score: 98,
-          trend: "+12%",
-          url: "https://github.com",
-        },
-        {
-          id: 2,
-          title: "Model Context Protocol (MCP) 2.0 Spec",
-          category: "AI / LLM",
-          overall_score: 95,
-          trend: "+10%",
-          url: "https://github.com/modelcontextprotocol",
-        },
-        {
-          id: 3,
-          title: "Llama 4 Scout Deep Reasoning Architecture",
-          category: "AI Models",
-          overall_score: 93,
-          trend: "+8%",
-          url: "https://arxiv.org",
-        },
-      ]
+    : []
 
   // Display top recommendations
   const displayRecommendations = recommendations.length > 0
     ? recommendations.slice(0, 3)
-    : [
-        {
-          id: 1,
-          num: 1,
-          title: "New AI Agent Framework",
-          subtitle: "Multi-agent orchestration",
-          score: "96/100",
-        },
-        {
-          id: 2,
-          num: 2,
-          title: "MCP Integration Toolkit",
-          subtitle: "Model Context Protocol",
-          score: "92/100",
-        },
-        {
-          id: 3,
-          num: 3,
-          title: "Local Inference Engine",
-          subtitle: "Efficient deployment",
-          score: "88/100",
-        },
-      ]
+    : []
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -619,12 +584,11 @@ export function Overview({
           </div>
 
           <DonutChart
-            data={[
-              { label: "Research Papers", value: 35, color: "#10b981" },
-              { label: "GitHub Projects", value: 40, color: "#a855f7" },
-              { label: "Tools & Skills", value: 15, color: "#3b82f6" },
-              { label: "Datasets", value: 10, color: "#ec4899" },
-            ]}
+            data={donutMetrics.map((m) => ({
+              label: m.label,
+              value: m.value,
+              color: m.color,
+            }))}
             centerText={`${(stats.totalDocuments || 3.2).toString()}K`}
             centerSubtext="Sources"
             size={130}

@@ -169,6 +169,38 @@ export async function fetchFrameworks() {
   return apiFetch("/frameworks")
 }
 
+// Content: Tech Resources, Trending Items, Dashboard Metrics, Problem Filters
+export async function fetchTechResources(resourceType = null) {
+  const query = resourceType ? `?resource_type=${encodeURIComponent(resourceType)}` : ""
+  return apiFetch(`/content/tech-resources${query}`)
+}
+
+export async function fetchTrending(itemType = null) {
+  const query = itemType ? `?item_type=${encodeURIComponent(itemType)}` : ""
+  return apiFetch(`/content/trending${query}`)
+}
+
+export async function fetchDashboardMetrics(metricType = null) {
+  const query = metricType ? `?metric_type=${encodeURIComponent(metricType)}` : ""
+  return apiFetch(`/content/dashboard-metrics${query}`)
+}
+
+export async function fetchProblemCategories() {
+  return apiFetch("/content/problem-categories")
+}
+
+export async function fetchProblemSources() {
+  return apiFetch("/content/problem-sources")
+}
+
+export async function fetchKgGraph() {
+  return apiFetch("/kg/graph")
+}
+
+export async function fetchConfig(configKey: string) {
+  return apiFetch(`/config/${encodeURIComponent(configKey)}`)
+}
+
 // Founder OS: Startup Intelligence, Briefings & Growth
 export async function getStartupOpportunities(params = {}) {
   const query = new URLSearchParams()

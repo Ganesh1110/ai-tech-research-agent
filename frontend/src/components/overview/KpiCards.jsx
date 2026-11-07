@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import {
   RocketIcon,
   StarIcon,
@@ -6,12 +6,44 @@ import {
   ShieldCheckIcon,
 } from "../common/Icons"
 import { Sparkline } from "../common/Sparkline"
+import { fetchDashboardMetrics } from "../../services/api"
 
 export function KpiCards({ stats = {} }) {
-  const totalDiscoveries = stats.totalDiscoveries || 1058
-  const highPotential = stats.highPotential || 86
-  const newToday = stats.newToday || 24
-  const sourceValidity = stats.sourceValidity || 92
+  const totalDiscoveries = stats.totalDiscoveries || 0
+  const highPotential = stats.highPotential || 0
+  const newToday = stats.newToday || 0
+  const sourceValidity = stats.sourceValidity || 0
+
+  const [sparklineValues, setSparklineValues] = useState([
+    [12, 14, 13, 17, 19, 18, 24, 28],
+    [8, 10, 11, 14, 13, 16, 18, 21],
+    [5, 8, 9, 12, 14, 18, 22, 24],
+    [88, 89, 90, 91, 91, 92, 92, 92],
+  ])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetchDashboardMetrics("sparkline")
+        if (!cancelled && res.items && res.items.length >= 8) {
+          const vals = res.items.map((m) => m.value)
+          if (!cancelled) {
+            setSparklineValues([
+              vals.slice(0, 8),
+              vals.slice(0, 8),
+              vals.slice(0, 8),
+              vals.slice(0, 8),
+            ])
+          }
+        }
+      } catch (err) {
+        console.warn("Sparkline metrics load failed:", err)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <section
@@ -53,7 +85,7 @@ export function KpiCards({ stats = {} }) {
               </div>
             </div>
           </div>
-          <Sparkline data={[12, 14, 13, 17, 19, 18, 24, 28]} color="#8b5cf6" width={75} height={32} />
+          <Sparkline data={sparklineValues[0]} color="#8b5cf6" width={75} height={32} />
         </div>
       </div>
 
@@ -88,7 +120,7 @@ export function KpiCards({ stats = {} }) {
               </div>
             </div>
           </div>
-          <Sparkline data={[8, 10, 11, 14, 13, 16, 18, 21]} color="#f59e0b" width={75} height={32} />
+          <Sparkline data={sparklineValues[1]} color="#f59e0b" width={75} height={32} />
         </div>
       </div>
 
@@ -123,7 +155,7 @@ export function KpiCards({ stats = {} }) {
               </div>
             </div>
           </div>
-          <Sparkline data={[5, 8, 9, 12, 14, 18, 22, 24]} color="#00f0ff" width={75} height={32} />
+          <Sparkline data={sparklineValues[2]} color="#00f0ff" width={75} height={32} />
         </div>
       </div>
 
@@ -158,7 +190,7 @@ export function KpiCards({ stats = {} }) {
               </div>
             </div>
           </div>
-          <Sparkline data={[88, 89, 90, 91, 91, 92, 92, 92]} color="#10b981" width={75} height={32} />
+          <Sparkline data={sparklineValues[3]} color="#10b981" width={75} height={32} />
         </div>
       </div>
     </section>

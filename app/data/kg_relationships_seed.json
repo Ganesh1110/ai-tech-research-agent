@@ -1,0 +1,32 @@
+[
+  {
+    "source_entity_name": "Model Context Protocol",
+    "target_entity_name": "Autonomous Agent Core",
+    "relationship_type": "exposes tools to"
+  },
+  {
+    "source_entity_name": "Ollama / Local LLM",
+    "target_entity_name": "Autonomous Agent Core",
+    "relationship_type": "powers reasoning of"
+  },
+  {
+    "source_entity_name": "Autonomous Agent Core",
+    "target_entity_name": "SQLite Vector Store",
+    "relationship_type": "queries & indexes"
+  },
+  {
+    "source_entity_name": "GitHub Collectors",
+    "target_entity_name": "SQLite Vector Store",
+    "relationship_type": "populates"
+  },
+  {
+    "source_entity_name": "arXiv Research Ingestion",
+    "target_entity_name": "SQLite Vector Store",
+    "relationship_type": "populates"
+  },
+  {
+    "source_entity_name": "Model Context Protocol",
+    "target_entity_name": "GitHub Collectors",
+    "relationship_type": "integrates"
+  }
+]

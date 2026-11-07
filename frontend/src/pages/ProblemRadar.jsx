@@ -4,6 +4,8 @@ import {
   scanProblems,
   createProblem,
   createIdea,
+  fetchProblemCategories,
+  fetchProblemSources,
 } from "../services/api"
 import {
   RadarIcon,
@@ -33,6 +35,40 @@ export default function ProblemRadar({ onNavigate }) {
   const [formSeverity, setFormSeverity] = useState(7.0)
   const [formQuotes, setFormQuotes] = useState("")
   const [savingProblem, setSavingProblem] = useState(false)
+
+  // Dynamic filter options from DB
+  const [dbCategories, setDbCategories] = useState([])
+  const [dbSources, setDbSources] = useState([])
+  const [filtersLoaded, setFiltersLoaded] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const loadFilters = async () => {
+      try {
+        const [cats, srcs] = await Promise.all([
+          fetchProblemCategories(),
+          fetchProblemSources(),
+        ])
+        if (!cancelled) {
+          setDbCategories(cats.categories || [])
+          setDbSources(srcs.sources || [])
+          if (cats.categories && cats.categories.length > 0) {
+            setFormCat(cats.categories[0])
+          }
+          setSelectedCategory("All")
+          setSelectedSource("All")
+        }
+      } catch (err) {
+        console.warn("Filter options load failed:", err)
+      } finally {
+        if (!cancelled) {
+          setFiltersLoaded(true)
+        }
+      }
+    }
+    loadFilters()
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     loadProblems()
@@ -126,29 +162,11 @@ export default function ProblemRadar({ onNavigate }) {
     }
   }
 
-  // Categories list
-  const categories = [
-    "All",
-    "SaaS",
-    "DevTools",
-    "AI Workflow",
-    "Productivity",
-    "Security & Compliance",
-    "Consumer & SMB",
-  ]
+  // Cross-domain categories list (from DB)
+  const categories = ["All", ...dbCategories]
 
-  // Multi-source list
-  const sources = [
-    "All",
-    "GitHub",
-    "HackerNews",
-    "Reddit",
-    "AppStore",
-    "G2 / Reviews",
-    "X / Social",
-    "StackOverflow",
-    "Manual",
-  ]
+  // Multi-source list (from DB)
+  const sources = ["All", ...dbSources]
 
   const sourceMeta = {
     GitHub: { icon: "🐙", color: "#a855f7", bg: "rgba(168, 85, 247, 0.15)" },
@@ -333,12 +351,11 @@ export default function ProblemRadar({ onNavigate }) {
                   boxSizing: "border-box",
                 }}
               >
-                <option value="SaaS">SaaS</option>
-                <option value="DevTools">DevTools</option>
-                <option value="AI Workflow">AI Workflow</option>
-                <option value="Productivity">Productivity</option>
-                <option value="Security & Compliance">Security & Compliance</option>
-                <option value="Fintech">Fintech</option>
+                {dbCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
             </div>
 

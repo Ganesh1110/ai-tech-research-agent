@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import {
   BrainIcon,
   HomeIcon,
@@ -19,6 +19,7 @@ import {
   RadarIcon,
 } from "../common/Icons"
 import { Sparkline } from "../common/Sparkline"
+import { fetchDashboardMetrics } from "../services/api"
 
 export const NAV_ITEMS = [
   { id: "overview", label: "Command Center", icon: HomeIcon },
@@ -42,6 +43,23 @@ export const NAV_ITEMS = [
 export function Sidebar({ currentTab, onSelectTab, healthData }) {
   const isOnline = healthData?.ollama_available ?? true
   const modelName = healthData?.ollama_model || "qwen2.5:14b"
+  const [sidebarSparkline, setSidebarSparkline] = useState([10, 12, 14, 18, 16, 20, 24, 22, 28])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetchDashboardMetrics("sparkline")
+        if (!cancelled && res.items && res.items.length > 0) {
+          setSidebarSparkline(res.items.map((m) => m.value))
+        }
+      } catch (err) {
+        console.warn("Sidebar sparkline load failed:", err)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <aside className="sidebar">
@@ -183,7 +201,7 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
           {modelName}
         </div>
         <Sparkline
-          data={[10, 12, 14, 18, 16, 20, 24, 22, 28]}
+          data={sidebarSparkline}
           color={isOnline ? "#10b981" : "#f43f5e"}
           width={190}
           height={26}

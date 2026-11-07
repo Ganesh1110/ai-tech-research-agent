@@ -1,74 +1,42 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { FlameIcon, GithubIcon, ExternalLinkIcon, StarIcon, SparklesIcon } from "../components/common/Icons"
 import { TechFrameworksDirectory } from "../components/common/TechFrameworksDirectory"
+import { fetchTrending } from "../services/api"
 
 export function Trending({ onBrainstormWithFramework }) {
-  const [activeTab, setActiveTab] = useState("frameworks") // 'frameworks' or 'repos'
+  const [activeTab, setActiveTab] = useState("frameworks")
 
-  const trendingRepos = [
-    {
-      name: "modelcontextprotocol/servers",
-      stars: "28.4k",
-      forks: "3.2k",
-      growth: "+480 stars/day",
-      category: "MCP / Integrations",
-      desc: "Reference implementations for the Model Context Protocol (MCP) clients and servers.",
-      url: "https://github.com/modelcontextprotocol/servers",
-    },
-    {
-      name: "browser-use/browser-use",
-      stars: "19.8k",
-      forks: "2.1k",
-      growth: "+320 stars/day",
-      category: "Agentic AI",
-      desc: "Make websites accessible for AI agents with headless browser automation.",
-      url: "https://github.com/browser-use/browser-use",
-    },
-    {
-      name: "deepseek-ai/DeepSeek-V3",
-      stars: "45.1k",
-      forks: "6.8k",
-      growth: "+1.2k stars/day",
-      category: "AI Models",
-      desc: "An advanced open-weights mixture-of-experts model with multi-head latent attention.",
-      url: "https://github.com/deepseek-ai/DeepSeek-V3",
-    },
-    {
-      name: "ollama/ollama",
-      stars: "112k",
-      forks: "9.4k",
-      growth: "+210 stars/day",
-      category: "Local LLM",
-      desc: "Get up and running with Llama, Mistral, and other large language models locally.",
-      url: "https://github.com/ollama/ollama",
-    },
-    {
-      name: "langchain-ai/langgraph",
-      stars: "11.5k",
-      forks: "1.8k",
-      growth: "+190 stars/day",
-      category: "Agentic AI",
-      desc: "Build resilient language agents as graphs with stateful multi-actor communication.",
-      url: "https://github.com/langchain-ai/langgraph",
-    },
-    {
-      name: "asg017/sqlite-vec",
-      stars: "5.8k",
-      forks: "290",
-      growth: "+140 stars/day",
-      category: "Vector & RAG",
-      desc: "A vector search SQLite extension that runs anywhere, with zero external infrastructure.",
-      url: "https://github.com/asg017/sqlite-vec",
-    },
-  ]
+  const [trendingRepos, setTrendingRepos] = useState([])
+  const [trendingTopics, setTrendingTopics] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const trendingTopics = [
-    { name: "Multi-Agent Orchestration", growth: "+64%", count: "1,420 items" },
-    { name: "MCP Protocol Standard", growth: "+88%", count: "890 items" },
-    { name: "Local LLM Quantization (GGUF)", growth: "+35%", count: "650 items" },
-    { name: "Autonomous Tool-Calling", growth: "+42%", count: "510 items" },
-    { name: "Hybrid Vector + BM25 RAG", growth: "+29%", count: "480 items" },
-  ]
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const [resR, resT] = await Promise.all([
+          fetchTrending("repo"),
+          fetchTrending("topic"),
+        ])
+        if (!cancelled) {
+          setTrendingRepos(resR.items || [])
+          setTrendingTopics(resT.items || [])
+          setError(null)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -121,7 +89,11 @@ export function Trending({ onBrainstormWithFramework }) {
         </div>
       </div>
 
-      {activeTab === "frameworks" ? (
+      {loading ? (
+        <div style={{ textAlign: "center", padding: 60, color: "var(--text-dim)" }}>
+          Loading trending data…
+        </div>
+      ) : activeTab === "frameworks" ? (
         <TechFrameworksDirectory
           onBrainstormWithFramework={(item) => {
             const prompt = `Evaluate the ${item.name} framework (${item.framework}) for building autonomous research tools. What are its architectural strengths, tradeoffs compared to alternatives, and local deployment viability?`
@@ -131,7 +103,14 @@ export function Trending({ onBrainstormWithFramework }) {
           }}
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+        <>
+          {error && (
+            <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#fca5a5" }}>
+              <span>⚠️</span>
+              <span>Trending data unavailable (API error): {error}</span>
+            </div>
+          )}
+
           {/* Velocity Topics Chips */}
           <div className="glass-panel" style={{ padding: "18px 22px" }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-bright)", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
@@ -141,7 +120,7 @@ export function Trending({ onBrainstormWithFramework }) {
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               {trendingTopics.map((topic, i) => (
                 <div
-                  key={i}
+                  key={topic.id || i}
                   style={{
                     background: "rgba(255, 255, 255, 0.03)",
                     border: "1px solid var(--border-subtle)",
@@ -176,7 +155,7 @@ export function Trending({ onBrainstormWithFramework }) {
           >
             {trendingRepos.map((repo, i) => (
               <div
-                key={i}
+                key={repo.id || i}
                 className="glass-panel"
                 style={{
                   padding: "22px",
@@ -229,27 +208,29 @@ export function Trending({ onBrainstormWithFramework }) {
                     <span>⑂ <strong style={{ color: "var(--text-main)" }}>{repo.forks}</strong></span>
                   </div>
 
-                  <a
-                    href={repo.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      color: "var(--accent-purple-light)",
-                      textDecoration: "none",
-                      fontWeight: 600,
-                    }}
-                  >
-                    <span>Inspect Repo</span>
-                    <ExternalLinkIcon size={12} />
-                  </a>
+                  {repo.url && (
+                    <a
+                      href={repo.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        color: "var(--accent-purple-light)",
+                        textDecoration: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <span>Inspect Repo</span>
+                      <ExternalLinkIcon size={12} />
+                    </a>
+                  )}
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </>
       )}
     </div>
   )

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from sqlalchemy import select
+
 from fastapi import APIRouter, HTTPException
 
 from app.agent.agent import AutonomousAgent
@@ -43,6 +45,14 @@ from app.api.schemas import (
     WorkflowRunResponse,
     FrameworkItem,
     FrameworksResponse,
+    TechResourceItem,
+    TechResourceListResponse,
+    TrendingItemResponse,
+    TrendingItemListResponse,
+    DashboardMetricItem,
+    DashboardMetricListResponse,
+    ProblemCategoriesResponse,
+    ProblemSourcesResponse,
     StartupOpportunityResponse,
     StartupOpportunityListResponse,
     UpdateOpportunityStatusRequest,
@@ -81,6 +91,20 @@ from app.services.idea_validation import IdeaValidationService
 from app.services.tech_frameworks import (
     list_categories as svc_list_categories,
     list_tech_frameworks as svc_list_tech_frameworks,
+)
+from app.services.content_service import (
+    get_kg_graph,
+    get_system_config,
+    list_dashboard_metrics,
+    list_problem_categories,
+    list_problem_sources,
+    list_tech_resources,
+    list_trending_items,
+    seed_dashboard_metrics,
+    seed_kg_graph,
+    seed_system_config,
+    seed_tech_resources,
+    seed_trending_items,
 )
 from app.knowledge_base.refresh import KnowledgeRefresher
 from app.knowledge_base.storage import KnowledgeBaseStore
@@ -141,6 +165,24 @@ def health() -> HealthResponse:
     )
 
 
+# ---- Knowledge Graph -----------------------------------------------------
+
+@router.get("/kg/graph")
+def kg_graph() -> Dict[str, Any]:
+
+    return get_kg_graph()
+
+
+@router.get("/config/{config_key}")
+def get_config(config_key: str) -> Dict[str, Optional[str]]:
+
+    with SessionLocal() as db:
+
+        value = get_system_config(db, config_key)
+
+        return {"key": config_key, "value": value}
+
+
 # ---- Frameworks --------------------------------------------------------
 
 @router.get("/frameworks", response_model=FrameworksResponse)
@@ -159,6 +201,72 @@ def list_tech_frameworks() -> FrameworksResponse:
             count=len(frameworks),
 
         )
+
+
+# ---- Content: Tech Resources, Trending Items, Dashboard Metrics, Problem Filters ------
+
+@router.get("/content/tech-resources", response_model=TechResourceListResponse)
+def get_tech_resources(resource_type: Optional[str] = None) -> TechResourceListResponse:
+
+    with SessionLocal() as db:
+
+        items = list_tech_resources(db, resource_type=resource_type)
+
+        return TechResourceListResponse(
+
+            items=[TechResourceItem(**i) for i in items],
+
+            total=len(items),
+
+        )
+
+
+@router.get("/content/trending", response_model=TrendingItemListResponse)
+def get_trending(item_type: Optional[str] = None) -> TrendingItemListResponse:
+
+    with SessionLocal() as db:
+
+        items = list_trending_items(db, item_type=item_type)
+
+        return TrendingItemListResponse(
+
+            items=[TrendingItemResponse(**i) for i in items],
+
+            total=len(items),
+
+        )
+
+
+@router.get("/content/dashboard-metrics", response_model=DashboardMetricListResponse)
+def get_dashboard_metrics(metric_type: Optional[str] = None) -> DashboardMetricListResponse:
+
+    with SessionLocal() as db:
+
+        items = list_dashboard_metrics(db, metric_type=metric_type)
+
+        return DashboardMetricListResponse(
+
+            items=[DashboardMetricItem(**i) for i in items],
+
+            total=len(items),
+
+        )
+
+
+@router.get("/content/problem-categories", response_model=ProblemCategoriesResponse)
+def get_problem_categories() -> ProblemCategoriesResponse:
+
+    with SessionLocal() as db:
+
+        return ProblemCategoriesResponse(categories=list_problem_categories(db))
+
+
+@router.get("/content/problem-sources", response_model=ProblemSourcesResponse)
+def get_problem_sources() -> ProblemSourcesResponse:
+
+    with SessionLocal() as db:
+
+        return ProblemSourcesResponse(sources=list_problem_sources(db))
 
 
 # ---- Agent -----------------------------------------------------------

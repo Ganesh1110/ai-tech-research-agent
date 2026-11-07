@@ -132,18 +132,48 @@ class IdeaValidationService:
 
         return list(ideas)
 
-    def scan_and_sync_problems(self, db: Session, limit: int = 15) -> List[GlobalProblem]:
-        """Scrapes global problems and stores new ones in the database."""
+    def scan_and_sync_problems(self, db: Session, limit: int = 30) -> List[GlobalProblem]:
+        """Scrapes global problems and stores new ones, strictly preventing duplicates."""
         scanned = scan_global_problems(limit=limit)
-        added_or_updated = []
+
+        # 1. Fetch all existing problems for rigorous deduplication
+        existing_problems = db.scalars(select(GlobalProblem)).all()
+        existing_urls: Dict[str, GlobalProblem] = {}
+        existing_titles: Dict[str, GlobalProblem] = {}
+
+        for p in existing_problems:
+            if p.source_url:
+                clean_url = p.source_url.split("?")[0].strip().lower()
+                if len(clean_url) > 15:
+                    existing_urls[clean_url] = p
+            if p.title:
+                clean_title = re.sub(r'[^a-zA-Z0-9]', '', p.title.lower())[:50]
+                existing_titles[clean_title] = p
+
+        added_count = 0
+        updated_count = 0
 
         for p in scanned:
-            # Check if problem with same title exists
-            existing = db.scalars(
-                select(GlobalProblem).where(GlobalProblem.title == p["title"])
-            ).first()
+            url_key = p.get("source_url", "").split("?")[0].strip().lower()
+            title_key = re.sub(r'[^a-zA-Z0-9]', '', p.get("title", "").lower())[:50]
 
-            if not existing:
+            # Check if this problem already exists by canonical URL or normalized title
+            match: Optional[GlobalProblem] = None
+            if url_key and len(url_key) > 15 and url_key in existing_urls:
+                match = existing_urls[url_key]
+            elif title_key in existing_titles:
+                match = existing_titles[title_key]
+
+            if match:
+                # Issue already exists in DB — NEVER duplicate! Update latest metrics only.
+                match.severity_score = p.get("severity_score", match.severity_score)
+                match.frequency_score = p.get("frequency_score", match.frequency_score)
+                match.composite_pain_score = p.get("composite_pain_score", match.composite_pain_score)
+                if p.get("sentiment_quotes"):
+                    match.sentiment_quotes = p["sentiment_quotes"]
+                updated_count += 1
+            else:
+                # Brand new issue — insert it safely
                 item = GlobalProblem(
                     title=p["title"],
                     description=p.get("description", ""),
@@ -159,14 +189,16 @@ class IdeaValidationService:
                     status="active",
                 )
                 db.add(item)
-                added_or_updated.append(item)
-            else:
-                existing.severity_score = p.get("severity_score", existing.severity_score)
-                existing.frequency_score = p.get("frequency_score", existing.frequency_score)
-                existing.composite_pain_score = p.get("composite_pain_score", existing.composite_pain_score)
-                added_or_updated.append(existing)
+                added_count += 1
+
+                # Track immediately to prevent duplicates within the same batch
+                if url_key and len(url_key) > 15:
+                    existing_urls[url_key] = item
+                if title_key:
+                    existing_titles[title_key] = item
 
         db.commit()
+        logger.info(f"Problem Radar Sync: {added_count} new issues added, {updated_count} existing issues updated, 0 duplicates.")
 
         # Update matching counts against all ideas
         self.update_all_problem_matches(db)

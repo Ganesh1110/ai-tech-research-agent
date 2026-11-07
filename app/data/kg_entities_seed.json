@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Model Context Protocol",
+    "entity_type": "Protocol",
+    "description": "Standard for connecting AI agents to tools and data sources",
+    "metadata_json": {}
+  },
+  {
+    "name": "Autonomous Agent Core",
+    "entity_type": "Architecture",
+    "description": "Central orchestration layer for multi-agent workflows",
+    "metadata_json": {}
+  },
+  {
+    "name": "Ollama / Local LLM",
+    "entity_type": "Inference",
+    "description": "Local open-weights model serving for private AI workloads",
+    "metadata_json": {}
+  },
+  {
+    "name": "SQLite Vector Store",
+    "entity_type": "Storage",
+    "description": "Embedded vector search inside SQLite for local RAG",
+    "metadata_json": {}
+  },
+  {
+    "name": "GitHub Collectors",
+    "entity_type": "Ingestion",
+    "description": "Ingests repositories, issues, and releases from GitHub",
+    "metadata_json": {}
+  },
+  {
+    "name": "arXiv Research Ingestion",
+    "entity_type": "Ingestion",
+    "description": "Ingests AI/ML research papers from arXiv",
+    "metadata_json": {}
+  }
+]

@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from "react"
 import { SendIcon, SparklesIcon, BrainIcon, ExternalLinkIcon, RefreshIcon } from "../components/common/Icons"
 import { runAgent, runOrchestrate } from "../services/api"
+import { fetchConfig } from "../services/api"
 
 export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
+  const [config, setConfig] = useState(null)
+
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem("ai_brainstorm_history")
     if (saved) {
@@ -10,17 +13,36 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
         return JSON.parse(saved)
       } catch {}
     }
-    return [
-      {
-        id: 1,
-        role: "agent",
-        content:
-          "Hello! I am your AI Tech Research Agent. I continuously explore GitHub, arXiv, and developer ecosystems. Ask me to brainstorm new system architectures, evaluate MCP servers, analyze repository technical feasibility, or synthesize research discoveries.",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        citations: [],
-      },
-    ]
+    return []
   })
+
+  useEffect(() => {
+    let cancelled = false
+    const loadConfig = async () => {
+      try {
+        const res = await fetchConfig("brainstorm_welcome_message")
+        if (!cancelled && res.value) {
+          setConfig(res.value)
+          // Seed welcome message if history is empty
+          if (messages.length === 0) {
+            setMessages([
+              {
+                id: 1,
+                role: "agent",
+                content: res.value,
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                citations: [],
+              },
+            ])
+          }
+        }
+      } catch (err) {
+        console.warn("Config load failed:", err)
+      }
+    }
+    loadConfig()
+    return () => { cancelled = true }
+  }, [])
 
   const [input, setInput] = useState("")
   const [isSending, setIsSending] = useState(false)
@@ -96,11 +118,12 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
 
   function handleClear() {
     if (confirm("Clear brainstorming session history?")) {
+      const resetMsg = config ? config.value : "Brainstorming workspace reset. What technology, architecture, or repository should we explore next?"
       const initial = [
         {
           id: 1,
           role: "agent",
-          content: "Brainstorming workspace reset. What technology, architecture, or repository should we explore next?",
+          content: resetMsg,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]

@@ -1,31 +1,37 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { GraphIcon, SearchIcon, ExternalLinkIcon, RefreshIcon } from "../components/common/Icons"
 import { kbSearch } from "../services/api"
+import { fetchKgGraph } from "../services/api"
 
 export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
-  const [query, setQuery] = useState("Agentic AI and MCP Tooling")
+  const [query, setQuery] = useState("")
   const [results, setResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
   const [activeCategory, setActiveCategory] = useState("all")
+  const [nodes, setNodes] = useState([])
+  const [edges, setEdges] = useState([])
+  const [graphLoading, setGraphLoading] = useState(true)
 
-  // Graph nodes representation
-  const nodes = [
-    { id: "node-1", label: "Model Context Protocol", type: "Protocol", color: "#a855f7", x: 220, y: 130 },
-    { id: "node-2", label: "Autonomous Agent Core", type: "Architecture", color: "#00f0ff", x: 420, y: 90 },
-    { id: "node-3", label: "Ollama / Local LLM", type: "Inference", color: "#10b981", x: 140, y: 260 },
-    { id: "node-4", label: "SQLite Vector Store", type: "Storage", color: "#3b82f6", x: 380, y: 250 },
-    { id: "node-5", label: "GitHub Collectors", type: "Ingestion", color: "#f59e0b", x: 580, y: 140 },
-    { id: "node-6", label: "arXiv Research Ingestion", type: "Ingestion", color: "#ec4899", x: 560, y: 280 },
-  ]
-
-  const edges = [
-    { from: "node-1", to: "node-2", label: "exposes tools to" },
-    { from: "node-3", to: "node-2", label: "powers reasoning of" },
-    { from: "node-2", to: "node-4", label: "queries & indexes" },
-    { from: "node-5", to: "node-4", label: "populates" },
-    { from: "node-6", to: "node-4", label: "populates" },
-    { from: "node-1", to: "node-5", label: "integrates" },
-  ]
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetchKgGraph()
+        if (!cancelled) {
+          setNodes(res.nodes || [])
+          setEdges(res.edges || [])
+        }
+      } catch (err) {
+        console.error("KG load failed:", err)
+      } finally {
+        if (!cancelled) {
+          setGraphLoading(false)
+        }
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
 
   async function handleSearch(e) {
     e?.preventDefault()
@@ -64,60 +70,66 @@ export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
           border: "1px solid var(--border-subtle)",
         }}
       >
-        <svg width="100%" height="100%" viewBox="0 0 720 360" style={{ overflow: "visible" }}>
-          {/* Edges */}
-          {edges.map((e, idx) => {
-            const source = nodes.find((n) => n.id === e.from)
-            const target = nodes.find((n) => n.id === e.to)
-            if (!source || !target) return null
-            return (
-              <g key={idx}>
-                <line
-                  x1={source.x}
-                  y1={source.y}
-                  x2={target.x}
-                  y2={target.y}
-                  stroke="rgba(255, 255, 255, 0.15)"
-                  strokeWidth="1.5"
-                  strokeDasharray="4 2"
-                />
-              </g>
-            )
-          })}
+        {graphLoading ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-dim)" }}>
+            Loading knowledge graph…
+          </div>
+        ) : (
+          <svg width="100%" height="100%" viewBox="0 0 720 360" style={{ overflow: "visible" }}>
+            {/* Edges */}
+            {edges.map((e, idx) => {
+              const source = nodes.find((n) => n.id === e.from)
+              const target = nodes.find((n) => n.id === e.to)
+              if (!source || !target) return null
+              return (
+                <g key={idx}>
+                  <line
+                    x1={source.x}
+                    y1={source.y}
+                    x2={target.x}
+                    y2={target.y}
+                    stroke="rgba(255, 255, 255, 0.15)"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 2"
+                  />
+                </g>
+              )
+            })}
 
-          {/* Nodes */}
-          {nodes.map((n) => (
-            <g key={n.id} transform={`translate(${n.x}, ${n.y})`} style={{ cursor: "pointer" }}>
-              <circle
-                r="24"
-                fill="rgba(13, 19, 33, 0.9)"
-                stroke={n.color}
-                strokeWidth="2"
-                style={{ filter: `drop-shadow(0 0 10px ${n.color}88)` }}
-              />
-              <circle r="4" fill={n.color} />
-              <text
-                y="38"
-                textAnchor="middle"
-                fontSize="11.5"
-                fontWeight="600"
-                fill="#ffffff"
-                style={{ pointerEvents: "none" }}
-              >
-                {n.label}
-              </text>
-              <text
-                y="50"
-                textAnchor="middle"
-                fontSize="9.5"
-                fill="var(--text-dim)"
-                style={{ pointerEvents: "none" }}
-              >
-                {n.type}
-              </text>
-            </g>
-          ))}
-        </svg>
+            {/* Nodes */}
+            {nodes.map((n) => (
+              <g key={n.id} transform={`translate(${n.x}, ${n.y})`} style={{ cursor: "pointer" }}>
+                <circle
+                  r="24"
+                  fill="rgba(13, 19, 33, 0.9)"
+                  stroke={n.color}
+                  strokeWidth="2"
+                  style={{ filter: `drop-shadow(0 0 10px ${n.color}88)` }}
+                />
+                <circle r="4" fill={n.color} />
+                <text
+                  y="38"
+                  textAnchor="middle"
+                  fontSize="11.5"
+                  fontWeight="600"
+                  fill="#ffffff"
+                  style={{ pointerEvents: "none" }}
+                >
+                  {n.label}
+                </text>
+                <text
+                  y="50"
+                  textAnchor="middle"
+                  fontSize="9.5"
+                  fill="var(--text-dim)"
+                  style={{ pointerEvents: "none" }}
+                >
+                  {n.type}
+                </text>
+              </g>
+            ))}
+          </svg>
+        )}
 
         {/* Overlay instruction */}
         <div style={{ position: "absolute", top: 16, right: 20, fontSize: 11.5, color: "var(--text-muted)" }}>

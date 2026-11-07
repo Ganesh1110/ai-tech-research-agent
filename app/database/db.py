@@ -89,6 +89,14 @@ def migrate_database():
 
         TechFramework,
 
+        TechResource,
+
+        SystemConfig,
+
+        TrendingItem,
+
+        DashboardMetric,
+
         DiscoveryCycle,
 
         DiscoveredItem,
@@ -124,6 +132,36 @@ def migrate_database():
     )
 
     Base.metadata.create_all(bind=engine)
+
+    # Seed all catalog content from JSON seed files (idempotent — skips if present)
+
+    from app.database.db import SessionLocal as _SessionLocal
+
+    with _SessionLocal() as _seed_db:
+
+        from app.services.content_service import (  # noqa: F401
+
+            seed_dashboard_metrics,
+
+            seed_kg_graph,
+
+            seed_system_config,
+
+            seed_tech_resources,
+
+            seed_trending_items,
+
+        )
+
+        seed_tech_resources(_seed_db)
+
+        seed_trending_items(_seed_db)
+
+        seed_dashboard_metrics(_seed_db)
+
+        seed_kg_graph(_seed_db)
+
+        seed_system_config(_seed_db)
 
     new_columns = [
         ("processing_status", "VARCHAR(50) DEFAULT 'pending'"),
