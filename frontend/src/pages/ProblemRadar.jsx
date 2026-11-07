@@ -137,6 +137,30 @@ export default function ProblemRadar({ onNavigate }) {
     "Consumer & SMB",
   ]
 
+  // Multi-source list
+  const sources = [
+    "All",
+    "GitHub",
+    "HackerNews",
+    "Reddit",
+    "AppStore",
+    "G2 / Reviews",
+    "X / Social",
+    "StackOverflow",
+    "Manual",
+  ]
+
+  const sourceMeta = {
+    GitHub: { icon: "🐙", color: "#a855f7", bg: "rgba(168, 85, 247, 0.15)" },
+    HackerNews: { icon: "🟠", color: "#f97316", bg: "rgba(249, 115, 22, 0.15)" },
+    Reddit: { icon: "🔴", color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)" },
+    AppStore: { icon: "📱", color: "#3b82f6", bg: "rgba(59, 130, 246, 0.15)" },
+    "G2 / Reviews": { icon: "⭐", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" },
+    "X / Social": { icon: "🐦", color: "#0ea5e9", bg: "rgba(14, 165, 233, 0.15)" },
+    StackOverflow: { icon: "🥞", color: "#eab308", bg: "rgba(234, 179, 8, 0.15)" },
+    Manual: { icon: "✍️", color: "#10b981", bg: "rgba(16, 185, 129, 0.15)" },
+  }
+
   // KPI Calculations
   const totalCount = problems.length
   const criticalCount = problems.filter((p) => p.severity_score >= 8.0).length
@@ -393,15 +417,18 @@ export default function ProblemRadar({ onNavigate }) {
       )}
 
       {/* Category Filter Pills */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderBottom: "1px solid var(--border, #334155)", paddingBottom: 12 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <span style={{ fontSize: 12, color: "var(--text-muted, #94a3b8)", fontWeight: 600, marginRight: 4 }}>
+          Category:
+        </span>
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             style={{
-              padding: "6px 14px",
+              padding: "5px 12px",
               borderRadius: 20,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
               background: selectedCategory === cat ? "#ef4444" : "var(--surface-card, #1e293b)",
@@ -412,6 +439,39 @@ export default function ProblemRadar({ onNavigate }) {
             {cat}
           </button>
         ))}
+      </div>
+
+      {/* Multi-Source Filter Pills */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", borderBottom: "1px solid var(--border, #334155)", paddingBottom: 14 }}>
+        <span style={{ fontSize: 12, color: "var(--text-muted, #94a3b8)", fontWeight: 600, marginRight: 4 }}>
+          Source:
+        </span>
+        {sources.map((src) => {
+          const meta = sourceMeta[src]
+          const isSelected = selectedSource === src
+          return (
+            <button
+              key={src}
+              onClick={() => setSelectedSource(src)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "5px 12px",
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: isSelected ? (meta?.color || "var(--accent, #6366f1)") : "var(--surface-card, #1e293b)",
+                color: isSelected ? "#fff" : (meta?.color || "var(--text-muted, #94a3b8)"),
+                border: isSelected ? "none" : "1px solid var(--border, #334155)",
+              }}
+            >
+              {meta?.icon && <span>{meta.icon}</span>}
+              <span>{src}</span>
+            </button>
+          )
+        })}
       </div>
 
       {/* Problems Feed */}
@@ -489,13 +549,18 @@ export default function ProblemRadar({ onNavigate }) {
                       <span
                         style={{
                           fontSize: 11,
+                          fontWeight: 600,
                           padding: "2px 8px",
                           borderRadius: 4,
-                          background: "var(--surface, #0f172a)",
-                          color: "var(--text-muted, #94a3b8)",
+                          background: sourceMeta[prob.source]?.bg || "var(--surface, #0f172a)",
+                          color: sourceMeta[prob.source]?.color || "var(--text-muted, #94a3b8)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
                         }}
                       >
-                        Source: {prob.source}
+                        {sourceMeta[prob.source]?.icon && <span>{sourceMeta[prob.source].icon}</span>}
+                        <span>{prob.source}</span>
                       </span>
 
                       {prob.matched_ideas_count > 0 && (
