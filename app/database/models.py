@@ -22,6 +22,65 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database.db import Base
 
 
+class TechFramework(Base):
+
+    """Tech framework directory entries sourced from the database (no hardcoded data)."""
+
+    __tablename__ = "tech_frameworks"
+
+    __table_args__ = (
+        Index("idx_tech_framework_category", "category"),
+        Index("idx_tech_framework_framework_id", "framework_id"),
+        Index("idx_tech_framework_active", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    framework_id: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    category: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    framework: Mapped[str] = mapped_column(String(200), default="")
+
+    runtime: Mapped[str] = mapped_column(String(200), default="")
+
+    maturity: Mapped[str] = mapped_column(String(100), default="")
+
+    maturity_color: Mapped[str] = mapped_column(String(20), default="#6366f1")
+
+    tagline: Mapped[str] = mapped_column(Text, default="")
+
+    key_features: Mapped[list] = mapped_column(JSON, default=list)
+
+    best_for: Mapped[str] = mapped_column(Text, default="")
+
+    docs_url: Mapped[str] = mapped_column(String(500), default="")
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
 class ResearchItem(Base):
 
     __tablename__ = "research_items"
@@ -833,6 +892,8 @@ class GlobalProblem(Base):
 
 
 __all__ = [
+
+    "TechFramework",
 
     "ResearchItem",
 

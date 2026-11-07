@@ -87,6 +87,8 @@ def migrate_database():
 
     from app.database.models import (  # noqa: F401
 
+        TechFramework,
+
         DiscoveryCycle,
 
         DiscoveredItem,

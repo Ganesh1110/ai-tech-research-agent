@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Local First AI Engineering Log & Anomaly Detective",
+    "problem_statement": "Autonomous multi-agent loops drift, loop infinitely, or burn thousands in cloud tokens with zero local observability or audit trails.",
+    "proposed_solution": "A lightweight local daemon that intercepts LLM agent calls, generates semantic traces in SQLite, and alerts when tokens or loop count exceed thresholds.",
+    "target_audience": "AI Engineers, Solo Founders building autonomous agents",
+    "monetization_hypothesis": "Open core CLI with paid team telemetry cloud tier ($19/mo)",
+    "tags": ["AI Agents", "Observability", "DevTools", "Local-First"],
+    "status": "draft"
+  },
+  {
+    "title": "Continuous Competitor Pain-Point Radar for Solopreneurs",
+    "problem_statement": "Solo founders build features nobody wants because they don't have time to monitor Reddit, G2, Trustpilot, and X daily for real customer complaints about incumbents.",
+    "proposed_solution": "An automated scraper that clusters 1-star reviews and Reddit gripes about specific competitor SaaS products into prioritized feature recommendations.",
+    "target_audience": "Micro-SaaS Founders, Indie Hackers, Growth Marketers",
+    "monetization_hypothesis": "$39/mo subscription for weekly problem-digest and instant alert on competitor outage complaints",
+    "tags": ["Growth OS", "Market Intelligence", "SaaS", "IndieHacker"],
+    "status": "draft"
+  },
+  {
+    "title": "College LAN Arcade (Zero-Install Campus Gaming OS)",
+    "problem_statement": "College students in dorms, labs, and hackathons struggle to play casual multiplayer games together due to restrictive campus firewalls, blocked gaming ports, high latency, and heavy download/install friction.",
+    "proposed_solution": "A modular host-authoritative multiplayer LAN arcade in pure Python standard library with zero external dependencies. Features 22 classic games (Chess, Battleship, Connect Four, 2048, Wordle Duel, Typing Racer, Bingo), dual access via Web Browser (ttyd port 8220) or 1-command SSH (`ssh arcade@server`), host-authoritative state, privacy enforcement, and seamless instant rematches.",
+    "target_audience": "College students, campus computer science clubs, hackathon organizers, dorm networks",
+    "monetization_hypothesis": "Open-core campus edition; club/event licenses with custom university branding, tournament leaderboard daemons, and custom trivia packs ($49/event or semester)",
+    "tags": ["Gaming", "LAN", "Python", "Terminal", "Zero-Dependencies", "Docker", "Campus-Tech"],
+    "status": "draft"
+  }
+]

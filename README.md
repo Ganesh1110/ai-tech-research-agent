@@ -180,9 +180,7 @@ Invalid specialist strings are ignored; valid ones are normalized automatically.
 
 ## Tech Frameworks Directory
 
-The directory (`frontend/src/components/common/TechFrameworksDirectory.jsx`) is now **dynamic**: it fetches frameworks from `GET /api/frameworks` at render time instead of relying on hardcoded data. The backend source of truth lives in `app/data/tech_frameworks.py` and can be updated without redeploying the frontend.
-
-When the API is unavailable, the component gracefully falls back to `STATIC_FRAMEWORKS_DATA` and shows a notice.
+The directory (`frontend/src/components/common/TechFrameworksDirectory.jsx`) is fully dynamic: it fetches frameworks from `GET /api/frameworks` at render time. The backend source of truth is the `tech_frameworks` database table, seeded once from `app/data/tech_frameworks_seed.json` (no hardcoded data in code, no frontend fallback). Frameworks can be added/updated directly in the DB without redeploying the frontend.
 
 Available categories: `Agentic AI`, `Local LLM Serving`, `Model Context Protocol`, `Vector & RAG`, `Mobile & React Native`, `Backend & Web`.
 

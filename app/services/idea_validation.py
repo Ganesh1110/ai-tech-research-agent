@@ -4,6 +4,7 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import select, desc
@@ -57,32 +58,63 @@ Return ONLY a valid JSON object matching these exact fields (no markdown backtic
 All scores must be numbers between 1 and 100. Composite score should be (demand*0.30 + technical*0.25 + market*0.25 + founder_fit*0.20).
 """
 
-STARTER_IDEAS = [
-    {
-        "title": "Local First AI Engineering Log & Anomaly Detective",
-        "problem_statement": "Autonomous multi-agent loops drift, loop infinitely, or burn thousands in cloud tokens with zero local observability or audit trails.",
-        "proposed_solution": "A lightweight local daemon that intercepts LLM agent calls, generates semantic traces in SQLite, and alerts when tokens or loop count exceed thresholds.",
-        "target_audience": "AI Engineers, Solo Founders building autonomous agents",
-        "monetization_hypothesis": "Open core CLI with paid team telemetry cloud tier ($19/mo)",
-        "tags": ["AI Agents", "Observability", "DevTools", "Local-First"],
-    },
-    {
-        "title": "Continuous Competitor Pain-Point Radar for Solopreneurs",
-        "problem_statement": "Solo founders build features nobody wants because they don't have time to monitor Reddit, G2, Trustpilot, and X daily for real customer complaints about incumbents.",
-        "proposed_solution": "An automated scraper that clusters 1-star reviews and Reddit gripes about specific competitor SaaS products into prioritized feature recommendations.",
-        "target_audience": "Micro-SaaS Founders, Indie Hackers, Growth Marketers",
-        "monetization_hypothesis": "$39/mo subscription for weekly problem-digest and instant alert on competitor outage complaints",
-        "tags": ["Growth OS", "Market Intelligence", "SaaS", "IndieHacker"],
-    },
-    {
-        "title": "🎮 College LAN Arcade (Zero-Install Campus Gaming OS)",
-        "problem_statement": "College students in dorms, labs, and hackathons struggle to play casual multiplayer games together due to restrictive campus firewalls, blocked gaming ports, high latency, and heavy download/install friction.",
-        "proposed_solution": "A modular host-authoritative multiplayer LAN arcade in pure Python standard library with zero external dependencies. Features 22 classic games (Chess, Battleship, Connect Four, 2048, Wordle Duel, Typing Racer, Bingo), dual access via Web Browser (ttyd port 8220) or 1-command SSH (`ssh arcade@server`), host-authoritative state, privacy enforcement, and seamless instant rematches.",
-        "target_audience": "College students, campus computer science clubs, hackathon organizers, dorm networks",
-        "monetization_hypothesis": "Open-core campus edition; club/event licenses with custom university branding, tournament leaderboard daemons, and custom trivia packs ($49/event or semester)",
-        "tags": ["Gaming", "LAN", "Python", "Terminal", "Zero-Dependencies", "Docker", "Campus-Tech"],
-    },
-]
+IDEAS_SEED_FILE = Path(__file__).resolve().parent.parent / "data" / "ideas_seed.json"
+
+
+def _load_idea_seed_data() -> List[Dict[str, Any]]:
+
+    with open(IDEAS_SEED_FILE, "r", encoding="utf-8") as fh:
+
+        return json.load(fh)
+
+
+def seed_initial_ideas(db: Session) -> int:
+
+    """Seed starter ideas into the database if the idea vault is empty.
+
+    Seed data is loaded from ``app/data/ideas_seed.json`` (never hardcoded
+    in code). Returns the number of ideas now present in the database.
+    """
+
+    existing = db.scalars(select(IdeaVaultItem.id)).all()
+
+    if existing:
+
+        return len(existing)
+
+    seed_data = _load_idea_seed_data()
+
+    for item in seed_data:
+
+        db.add(
+
+            IdeaVaultItem(
+
+                title=item["title"],
+
+                problem_statement=item.get("problem_statement", ""),
+
+                proposed_solution=item.get("proposed_solution", ""),
+
+                target_audience=item.get("target_audience", ""),
+
+                monetization_hypothesis=item.get("monetization_hypothesis", ""),
+
+                tags=item.get("tags", []),
+
+                status=item.get("status", "draft"),
+
+            )
+
+        )
+
+    db.commit()
+
+    count = len(db.scalars(select(IdeaVaultItem.id)).all())
+
+    logger.info("Seeded %d starter ideas into the database.", count)
+
+    return count
 
 
 class IdeaValidationService:
@@ -90,24 +122,14 @@ class IdeaValidationService:
 
     def __init__(self, ollama_client: Optional[OllamaClient] = None):
         self.llm = ollama_client or OllamaClient()
-
     def get_or_seed_ideas(self, db: Session) -> List[IdeaVaultItem]:
-        """Returns ideas or seeds starter ideas if empty."""
+
+        """Returns ideas, seeding starter ideas from the seed file if empty."""
+
+        seed_initial_ideas(db)
+
         ideas = db.scalars(select(IdeaVaultItem).order_by(desc(IdeaVaultItem.created_at))).all()
-        if not ideas:
-            for item in STARTER_IDEAS:
-                new_idea = IdeaVaultItem(
-                    title=item["title"],
-                    problem_statement=item["problem_statement"],
-                    proposed_solution=item["proposed_solution"],
-                    target_audience=item["target_audience"],
-                    monetization_hypothesis=item["monetization_hypothesis"],
-                    tags=item["tags"],
-                    status="draft",
-                )
-                db.add(new_idea)
-            db.commit()
-            ideas = db.scalars(select(IdeaVaultItem).order_by(desc(IdeaVaultItem.created_at))).all()
+
         return list(ideas)
 
     def scan_and_sync_problems(self, db: Session, limit: int = 15) -> List[GlobalProblem]:

@@ -78,7 +78,10 @@ from app.database.models import (
 )
 from app.services.startup_intelligence import StartupIntelligenceService
 from app.services.idea_validation import IdeaValidationService
-from app.data.tech_frameworks import list_categories, list_frameworks
+from app.services.tech_frameworks import (
+    list_categories as svc_list_categories,
+    list_tech_frameworks as svc_list_tech_frameworks,
+)
 from app.knowledge_base.refresh import KnowledgeRefresher
 from app.knowledge_base.storage import KnowledgeBaseStore
 from app.monitoring import Evaluator, TestCase
@@ -143,17 +146,19 @@ def health() -> HealthResponse:
 @router.get("/frameworks", response_model=FrameworksResponse)
 def list_tech_frameworks() -> FrameworksResponse:
 
-    frameworks = list_frameworks()
+    with SessionLocal() as db:
 
-    return FrameworksResponse(
+        frameworks = svc_list_tech_frameworks(db)
 
-        frameworks=[FrameworkItem(**f) for f in frameworks],
+        return FrameworksResponse(
 
-        categories=list_categories(),
+            frameworks=[FrameworkItem(**f) for f in frameworks],
 
-        count=len(frameworks),
+            categories=svc_list_categories(db),
 
-    )
+            count=len(frameworks),
+
+        )
 
 
 # ---- Agent -----------------------------------------------------------
