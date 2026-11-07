@@ -3,6 +3,8 @@
 Request/response models for the research platform API.
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -369,6 +371,92 @@ class UpdateSkillRequest(BaseModel):
     notes: Optional[str] = None
 
 
+# ---- Idea Vault & Global Problems ------------------------------------
+
+class IdeaVaultItemResponse(BaseModel):
+    id: int
+    title: str
+    problem_statement: str = ""
+    proposed_solution: str = ""
+    target_audience: str = ""
+    monetization_hypothesis: str = ""
+    status: str = "draft"
+    validation_score: float = 0.0
+    validation_feedback: Dict[str, Any] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list)
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class IdeaVaultItemListResponse(BaseModel):
+    ideas: List[IdeaVaultItemResponse]
+    total: int
+
+
+class CreateIdeaRequest(BaseModel):
+    title: str = Field(..., min_length=3, description="Idea title")
+    problem_statement: Optional[str] = ""
+    proposed_solution: Optional[str] = ""
+    target_audience: Optional[str] = ""
+    monetization_hypothesis: Optional[str] = ""
+    tags: Optional[List[str]] = Field(default_factory=list)
+
+
+class UpdateIdeaRequest(BaseModel):
+    title: Optional[str] = None
+    problem_statement: Optional[str] = None
+    proposed_solution: Optional[str] = None
+    target_audience: Optional[str] = None
+    monetization_hypothesis: Optional[str] = None
+    status: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+
+class GlobalProblemResponse(BaseModel):
+    id: int
+    title: str
+    description: str = ""
+    category: str = "General"
+    source: str = "Reddit"
+    source_url: str = ""
+    severity_score: float = 5.0
+    frequency_score: float = 5.0
+    commercial_viability: float = 5.0
+    composite_pain_score: float = 50.0
+    sentiment_quotes: List[str] = Field(default_factory=list)
+    suggested_tech_stack: List[str] = Field(default_factory=list)
+    matched_ideas_count: int = 0
+    status: str = "active"
+    discovered_at: Optional[str] = None
+
+
+class GlobalProblemListResponse(BaseModel):
+    problems: List[GlobalProblemResponse]
+    total: int
+
+
+class CreateProblemRequest(BaseModel):
+    title: str = Field(..., min_length=5)
+    description: Optional[str] = ""
+    category: Optional[str] = "General"
+    source: Optional[str] = "Manual"
+    source_url: Optional[str] = ""
+    severity_score: Optional[float] = 6.0
+    frequency_score: Optional[float] = 6.0
+    commercial_viability: Optional[float] = 6.0
+    sentiment_quotes: Optional[List[str]] = Field(default_factory=list)
+
+
+class UpdateProblemRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    status: Optional[str] = None
+    severity_score: Optional[float] = None
+    frequency_score: Optional[float] = None
+    commercial_viability: Optional[float] = None
+
+
 __all__ = [
 
     "AgentRunRequest",
@@ -446,5 +534,21 @@ __all__ = [
     "SkillAssessmentListResponse",
 
     "UpdateSkillRequest",
+
+    "IdeaVaultItemResponse",
+
+    "IdeaVaultItemListResponse",
+
+    "CreateIdeaRequest",
+
+    "UpdateIdeaRequest",
+
+    "GlobalProblemResponse",
+
+    "GlobalProblemListResponse",
+
+    "CreateProblemRequest",
+
+    "UpdateProblemRequest",
 
 ]

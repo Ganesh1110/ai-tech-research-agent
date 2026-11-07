@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 
 from datetime import datetime, timezone
@@ -743,6 +745,93 @@ class SkillAssessment(Base):
     )
 
 
+class IdeaVaultItem(Base):
+    """Founder Idea Bank storing ideas with systematic validation scoring."""
+
+    __tablename__ = "idea_vault_items"
+
+    __table_args__ = (
+        Index("idx_idea_status", "status"),
+        Index("idx_idea_created", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+
+    problem_statement: Mapped[str] = mapped_column(Text, default="")
+
+    proposed_solution: Mapped[str] = mapped_column(Text, default="")
+
+    target_audience: Mapped[str] = mapped_column(String(300), default="")
+
+    monetization_hypothesis: Mapped[str] = mapped_column(Text, default="")
+
+    status: Mapped[str] = mapped_column(String(50), default="draft")  # draft, validating, validated, pivoted, shelved, promoted
+
+    validation_score: Mapped[float] = mapped_column(Float, default=0.0)
+
+    validation_feedback: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class GlobalProblem(Base):
+    """Real-world user/consumer complaints and unmet needs discovered globally."""
+
+    __tablename__ = "global_problems"
+
+    __table_args__ = (
+        Index("idx_problem_category", "category"),
+        Index("idx_problem_status", "status"),
+        Index("idx_problem_composite_score", "composite_pain_score"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+
+    description: Mapped[str] = mapped_column(Text, default="")
+
+    category: Mapped[str] = mapped_column(String(100), default="General")
+
+    source: Mapped[str] = mapped_column(String(100), default="Reddit")
+
+    source_url: Mapped[str] = mapped_column(String(1000), default="")
+
+    severity_score: Mapped[float] = mapped_column(Float, default=5.0)
+
+    frequency_score: Mapped[float] = mapped_column(Float, default=5.0)
+
+    commercial_viability: Mapped[float] = mapped_column(Float, default=5.0)
+
+    composite_pain_score: Mapped[float] = mapped_column(Float, default=50.0)
+
+    sentiment_quotes: Mapped[list] = mapped_column(JSON, default=list)
+
+    suggested_tech_stack: Mapped[list] = mapped_column(JSON, default=list)
+
+    matched_ideas_count: Mapped[int] = mapped_column(Integer, default=0)
+
+    status: Mapped[str] = mapped_column(String(50), default="active")
+
+    discovered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+
 __all__ = [
 
     "ResearchItem",
@@ -776,5 +865,9 @@ __all__ = [
     "FounderProfile",
 
     "SkillAssessment",
+
+    "IdeaVaultItem",
+
+    "GlobalProblem",
 
 ]

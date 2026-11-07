@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy import (
     create_engine,
     text,
@@ -102,6 +104,20 @@ def migrate_database():
         FeasibilityReport,
 
         SourceCheck,
+
+        StartupOpportunity,
+
+        WeeklyBriefing,
+
+        ProductBlueprint,
+
+        FounderProfile,
+
+        SkillAssessment,
+
+        IdeaVaultItem,
+
+        GlobalProblem,
 
     )
 

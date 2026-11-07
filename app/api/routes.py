@@ -56,6 +56,14 @@ from app.api.schemas import (
     SkillAssessmentResponse,
     SkillAssessmentListResponse,
     UpdateSkillRequest,
+    IdeaVaultItemResponse,
+    IdeaVaultItemListResponse,
+    CreateIdeaRequest,
+    UpdateIdeaRequest,
+    GlobalProblemResponse,
+    GlobalProblemListResponse,
+    CreateProblemRequest,
+    UpdateProblemRequest,
 )
 from app.config import settings
 from app.database.db import SessionLocal
@@ -65,8 +73,11 @@ from app.database.models import (
     ProductBlueprint,
     FounderProfile,
     SkillAssessment,
+    IdeaVaultItem,
+    GlobalProblem,
 )
 from app.services.startup_intelligence import StartupIntelligenceService
+from app.services.idea_validation import IdeaValidationService
 from app.data.tech_frameworks import list_categories, list_frameworks
 from app.knowledge_base.refresh import KnowledgeRefresher
 from app.knowledge_base.storage import KnowledgeBaseStore
@@ -1053,6 +1064,376 @@ def update_skill_assessment(
             notes=skill.notes or "",
             actionable_recommendations=skill.actionable_recommendations or [],
             last_assessed_at=skill.last_assessed_at.isoformat() if skill.last_assessed_at else None,
+        )
+
+
+# ---- Idea Vault Endpoints --------------------------------------------
+
+@router.get("/ideas", response_model=IdeaVaultItemListResponse)
+def get_idea_vault_items(status: Optional[str] = None) -> IdeaVaultItemListResponse:
+    """Fetch ideas from the founder Idea Vault, seeding starter ideas if empty."""
+    with SessionLocal() as db:
+        service = IdeaValidationService()
+        ideas = service.get_or_seed_ideas(db)
+        if status:
+            ideas = [i for i in ideas if i.status == status]
+
+        return IdeaVaultItemListResponse(
+            ideas=[
+                IdeaVaultItemResponse(
+                    id=i.id,
+                    title=i.title,
+                    problem_statement=i.problem_statement or "",
+                    proposed_solution=i.proposed_solution or "",
+                    target_audience=i.target_audience or "",
+                    monetization_hypothesis=i.monetization_hypothesis or "",
+                    status=i.status or "draft",
+                    validation_score=i.validation_score or 0.0,
+                    validation_feedback=i.validation_feedback or {},
+                    tags=i.tags or [],
+                    created_at=i.created_at.isoformat() if i.created_at else None,
+                    updated_at=i.updated_at.isoformat() if i.updated_at else None,
+                )
+                for i in ideas
+            ],
+            total=len(ideas),
+        )
+
+
+@router.post("/ideas", response_model=IdeaVaultItemResponse)
+def create_idea_vault_item(req: CreateIdeaRequest) -> IdeaVaultItemResponse:
+    """Create a new idea in the founder Idea Vault."""
+    with SessionLocal() as db:
+        item = IdeaVaultItem(
+            title=req.title,
+            problem_statement=req.problem_statement or "",
+            proposed_solution=req.proposed_solution or "",
+            target_audience=req.target_audience or "",
+            monetization_hypothesis=req.monetization_hypothesis or "",
+            tags=req.tags or [],
+            status="draft",
+        )
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+        return IdeaVaultItemResponse(
+            id=item.id,
+            title=item.title,
+            problem_statement=item.problem_statement or "",
+            proposed_solution=item.proposed_solution or "",
+            target_audience=item.target_audience or "",
+            monetization_hypothesis=item.monetization_hypothesis or "",
+            status=item.status or "draft",
+            validation_score=item.validation_score or 0.0,
+            validation_feedback=item.validation_feedback or {},
+            tags=item.tags or [],
+            created_at=item.created_at.isoformat() if item.created_at else None,
+            updated_at=item.updated_at.isoformat() if item.updated_at else None,
+        )
+
+
+@router.get("/ideas/{idea_id}", response_model=IdeaVaultItemResponse)
+def get_idea_detail(idea_id: int) -> IdeaVaultItemResponse:
+    """Get single idea detail including feedback and supporting pain points."""
+    with SessionLocal() as db:
+        item = db.get(IdeaVaultItem, idea_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Idea not found")
+        return IdeaVaultItemResponse(
+            id=item.id,
+            title=item.title,
+            problem_statement=item.problem_statement or "",
+            proposed_solution=item.proposed_solution or "",
+            target_audience=item.target_audience or "",
+            monetization_hypothesis=item.monetization_hypothesis or "",
+            status=item.status or "draft",
+            validation_score=item.validation_score or 0.0,
+            validation_feedback=item.validation_feedback or {},
+            tags=item.tags or [],
+            created_at=item.created_at.isoformat() if item.created_at else None,
+            updated_at=item.updated_at.isoformat() if item.updated_at else None,
+        )
+
+
+@router.patch("/ideas/{idea_id}", response_model=IdeaVaultItemResponse)
+def update_idea_detail(idea_id: int, req: UpdateIdeaRequest) -> IdeaVaultItemResponse:
+    """Update fields of an idea."""
+    with SessionLocal() as db:
+        item = db.get(IdeaVaultItem, idea_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Idea not found")
+        if req.title is not None:
+            item.title = req.title
+        if req.problem_statement is not None:
+            item.problem_statement = req.problem_statement
+        if req.proposed_solution is not None:
+            item.proposed_solution = req.proposed_solution
+        if req.target_audience is not None:
+            item.target_audience = req.target_audience
+        if req.monetization_hypothesis is not None:
+            item.monetization_hypothesis = req.monetization_hypothesis
+        if req.status is not None:
+            item.status = req.status
+        if req.tags is not None:
+            item.tags = req.tags
+
+        db.commit()
+        db.refresh(item)
+        return IdeaVaultItemResponse(
+            id=item.id,
+            title=item.title,
+            problem_statement=item.problem_statement or "",
+            proposed_solution=item.proposed_solution or "",
+            target_audience=item.target_audience or "",
+            monetization_hypothesis=item.monetization_hypothesis or "",
+            status=item.status or "draft",
+            validation_score=item.validation_score or 0.0,
+            validation_feedback=item.validation_feedback or {},
+            tags=item.tags or [],
+            created_at=item.created_at.isoformat() if item.created_at else None,
+            updated_at=item.updated_at.isoformat() if item.updated_at else None,
+        )
+
+
+@router.delete("/ideas/{idea_id}")
+def delete_idea(idea_id: int):
+    """Delete an idea from the vault."""
+    with SessionLocal() as db:
+        item = db.get(IdeaVaultItem, idea_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Idea not found")
+        db.delete(item)
+        db.commit()
+        return {"deleted": True, "id": idea_id}
+
+
+@router.post("/ideas/{idea_id}/validate", response_model=IdeaVaultItemResponse)
+def validate_idea_endpoint(idea_id: int) -> IdeaVaultItemResponse:
+    """Run systematic validation on an idea using AI and matching pain points."""
+    with SessionLocal() as db:
+        service = IdeaValidationService()
+        item = service.validate_idea(db, idea_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Idea not found")
+        return IdeaVaultItemResponse(
+            id=item.id,
+            title=item.title,
+            problem_statement=item.problem_statement or "",
+            proposed_solution=item.proposed_solution or "",
+            target_audience=item.target_audience or "",
+            monetization_hypothesis=item.monetization_hypothesis or "",
+            status=item.status or "draft",
+            validation_score=item.validation_score or 0.0,
+            validation_feedback=item.validation_feedback or {},
+            tags=item.tags or [],
+            created_at=item.created_at.isoformat() if item.created_at else None,
+            updated_at=item.updated_at.isoformat() if item.updated_at else None,
+        )
+
+
+@router.post("/ideas/{idea_id}/promote", response_model=StartupOpportunityResponse)
+def promote_idea_endpoint(idea_id: int) -> StartupOpportunityResponse:
+    """Promotes a validated idea to an active Startup Opportunity in Startup Studio."""
+    with SessionLocal() as db:
+        service = IdeaValidationService()
+        opp = service.promote_to_startup_opportunity(db, idea_id)
+        if not opp:
+            raise HTTPException(status_code=404, detail="Idea not found")
+        return _opp_to_response(opp)
+
+
+# ---- Global Problem Radar Endpoints ----------------------------------
+
+@router.get("/problems", response_model=GlobalProblemListResponse)
+def get_global_problems(
+    category: Optional[str] = None,
+    source: Optional[str] = None,
+    min_score: Optional[float] = None,
+) -> GlobalProblemListResponse:
+    """Fetch discovered global consumer & developer pain points."""
+    with SessionLocal() as db:
+        service = IdeaValidationService()
+        problems = db.query(GlobalProblem).order_by(GlobalProblem.composite_pain_score.desc()).all()
+        if not problems:
+            problems = service.scan_and_sync_problems(db, limit=12)
+
+        if category and category != "All":
+            problems = [p for p in problems if p.category.lower() == category.lower()]
+        if source and source != "All":
+            problems = [p for p in problems if p.source.lower() == source.lower()]
+        if min_score is not None:
+            problems = [p for p in problems if p.composite_pain_score >= min_score]
+
+        return GlobalProblemListResponse(
+            problems=[
+                GlobalProblemResponse(
+                    id=p.id,
+                    title=p.title,
+                    description=p.description or "",
+                    category=p.category or "General",
+                    source=p.source or "Reddit",
+                    source_url=p.source_url or "",
+                    severity_score=p.severity_score or 5.0,
+                    frequency_score=p.frequency_score or 5.0,
+                    commercial_viability=p.commercial_viability or 5.0,
+                    composite_pain_score=p.composite_pain_score or 50.0,
+                    sentiment_quotes=p.sentiment_quotes or [],
+                    suggested_tech_stack=p.suggested_tech_stack or [],
+                    matched_ideas_count=p.matched_ideas_count or 0,
+                    status=p.status or "active",
+                    discovered_at=p.discovered_at.isoformat() if p.discovered_at else None,
+                )
+                for p in problems
+            ],
+            total=len(problems),
+        )
+
+
+@router.post("/problems", response_model=GlobalProblemResponse)
+def create_manual_problem(req: CreateProblemRequest) -> GlobalProblemResponse:
+    """Manually register a discovered customer problem or grievance."""
+    with SessionLocal() as db:
+        sev = req.severity_score or 6.0
+        freq = req.frequency_score or 6.0
+        comm = req.commercial_viability or 6.0
+        composite = round(((sev * 0.4) + (freq * 0.3) + (comm * 0.3)) * 10, 1)
+
+        problem = GlobalProblem(
+            title=req.title,
+            description=req.description or "",
+            category=req.category or "General",
+            source=req.source or "Manual",
+            source_url=req.source_url or "",
+            severity_score=sev,
+            frequency_score=freq,
+            commercial_viability=comm,
+            composite_pain_score=composite,
+            sentiment_quotes=req.sentiment_quotes or [],
+            status="active",
+        )
+        db.add(problem)
+        db.commit()
+        db.refresh(problem)
+        return GlobalProblemResponse(
+            id=problem.id,
+            title=problem.title,
+            description=problem.description or "",
+            category=problem.category or "General",
+            source=problem.source or "Manual",
+            source_url=problem.source_url or "",
+            severity_score=problem.severity_score or 5.0,
+            frequency_score=problem.frequency_score or 5.0,
+            commercial_viability=problem.commercial_viability or 5.0,
+            composite_pain_score=problem.composite_pain_score or 50.0,
+            sentiment_quotes=problem.sentiment_quotes or [],
+            suggested_tech_stack=problem.suggested_tech_stack or [],
+            matched_ideas_count=problem.matched_ideas_count or 0,
+            status=problem.status or "active",
+            discovered_at=problem.discovered_at.isoformat() if problem.discovered_at else None,
+        )
+
+
+@router.post("/problems/scan", response_model=GlobalProblemListResponse)
+def trigger_problem_scan(limit: int = 15) -> GlobalProblemListResponse:
+    """Trigger the Problem Radar to actively scan Reddit & Hacker News for complaints."""
+    with SessionLocal() as db:
+        service = IdeaValidationService()
+        problems = service.scan_and_sync_problems(db, limit=limit)
+        return GlobalProblemListResponse(
+            problems=[
+                GlobalProblemResponse(
+                    id=p.id,
+                    title=p.title,
+                    description=p.description or "",
+                    category=p.category or "General",
+                    source=p.source or "Reddit",
+                    source_url=p.source_url or "",
+                    severity_score=p.severity_score or 5.0,
+                    frequency_score=p.frequency_score or 5.0,
+                    commercial_viability=p.commercial_viability or 5.0,
+                    composite_pain_score=p.composite_pain_score or 50.0,
+                    sentiment_quotes=p.sentiment_quotes or [],
+                    suggested_tech_stack=p.suggested_tech_stack or [],
+                    matched_ideas_count=p.matched_ideas_count or 0,
+                    status=p.status or "active",
+                    discovered_at=p.discovered_at.isoformat() if p.discovered_at else None,
+                )
+                for p in problems
+            ],
+            total=len(problems),
+        )
+
+
+@router.get("/problems/{problem_id}", response_model=GlobalProblemResponse)
+def get_problem_detail(problem_id: int) -> GlobalProblemResponse:
+    """Get single problem detail."""
+    with SessionLocal() as db:
+        p = db.get(GlobalProblem, problem_id)
+        if not p:
+            raise HTTPException(status_code=404, detail="Problem not found")
+        return GlobalProblemResponse(
+            id=p.id,
+            title=p.title,
+            description=p.description or "",
+            category=p.category or "General",
+            source=p.source or "Reddit",
+            source_url=p.source_url or "",
+            severity_score=p.severity_score or 5.0,
+            frequency_score=p.frequency_score or 5.0,
+            commercial_viability=p.commercial_viability or 5.0,
+            composite_pain_score=p.composite_pain_score or 50.0,
+            sentiment_quotes=p.sentiment_quotes or [],
+            suggested_tech_stack=p.suggested_tech_stack or [],
+            matched_ideas_count=p.matched_ideas_count or 0,
+            status=p.status or "active",
+            discovered_at=p.discovered_at.isoformat() if p.discovered_at else None,
+        )
+
+
+@router.patch("/problems/{problem_id}", response_model=GlobalProblemResponse)
+def update_problem_status(problem_id: int, req: UpdateProblemRequest) -> GlobalProblemResponse:
+    """Update status or score of a global problem."""
+    with SessionLocal() as db:
+        p = db.get(GlobalProblem, problem_id)
+        if not p:
+            raise HTTPException(status_code=404, detail="Problem not found")
+        if req.title is not None:
+            p.title = req.title
+        if req.description is not None:
+            p.description = req.description
+        if req.category is not None:
+            p.category = req.category
+        if req.status is not None:
+            p.status = req.status
+        if req.severity_score is not None:
+            p.severity_score = req.severity_score
+        if req.frequency_score is not None:
+            p.frequency_score = req.frequency_score
+        if req.commercial_viability is not None:
+            p.commercial_viability = req.commercial_viability
+            
+        p.composite_pain_score = round(
+            ((p.severity_score * 0.4) + (p.frequency_score * 0.3) + (p.commercial_viability * 0.3)) * 10,
+            1
+        )
+        db.commit()
+        db.refresh(p)
+        return GlobalProblemResponse(
+            id=p.id,
+            title=p.title,
+            description=p.description or "",
+            category=p.category or "General",
+            source=p.source or "Reddit",
+            source_url=p.source_url or "",
+            severity_score=p.severity_score or 5.0,
+            frequency_score=p.frequency_score or 5.0,
+            commercial_viability=p.commercial_viability or 5.0,
+            composite_pain_score=p.composite_pain_score or 50.0,
+            sentiment_quotes=p.sentiment_quotes or [],
+            suggested_tech_stack=p.suggested_tech_stack or [],
+            matched_ideas_count=p.matched_ideas_count or 0,
+            status=p.status or "active",
+            discovered_at=p.discovered_at.isoformat() if p.discovered_at else None,
         )
 
 

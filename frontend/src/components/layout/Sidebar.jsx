@@ -15,11 +15,15 @@ import {
   RocketIcon,
   TrophyIcon,
   BlueprintIcon,
+  LightbulbIcon,
+  RadarIcon,
 } from "../common/Icons"
 import { Sparkline } from "../common/Sparkline"
 
 export const NAV_ITEMS = [
   { id: "overview", label: "Command Center", icon: HomeIcon },
+  { id: "idea_vault", label: "Idea Vault", icon: LightbulbIcon },
+  { id: "problem_radar", label: "Problem Radar", icon: RadarIcon },
   { id: "startup_studio", label: "Startup Studio", icon: RocketIcon },
   { id: "product_lab", label: "Product Lab", icon: BlueprintIcon },
   { id: "growth_center", label: "Growth & Skills", icon: TrophyIcon },

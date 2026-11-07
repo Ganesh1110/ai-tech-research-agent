@@ -6,6 +6,8 @@ It combines a **Technology Research Analyst**, **AI Startup Co-Founder**, **Prod
 
 ## Key Capabilities
 
+- **Founder Idea Vault & Validation Engine** — Persistent idea capture with multi-dimensional AI scoring (Demand Urgency, Technical Feasibility, Market Moat, Founder Fit), actionable MVP roadmaps, and 1-click promotion to Startup Studio.
+- **Global Problem & Pain-Point Radar** — Autonomous scanner collecting real customer friction, complaints, and unmet needs from Reddit, Hacker News, and review signals, matched directly to founder brainstorm ideas.
 - **Startup Opportunity Intelligence** — Automatically scans research discoveries to extract commercial business opportunities with 4-axis scoring (Technical Feasibility, Market Opportunity, Cost Feasibility, Differentiation) and ICP targeting.
 - **Weekly "What Should I Build Next?" Briefing** — Scheduled autonomous synthesis providing 3 technologies to explore, 3 startup ideas to validate, 1 recommended MVP architecture, and 1 high-leverage skill to develop.
 - **AI Product Architect & Builder** — Translates validated startup opportunities into technical blueprints, system topologies, tech stack selections, and MVP implementation epics.

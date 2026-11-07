@@ -60,6 +60,7 @@ class TestFounderOS(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        db_module.engine.dispose()
         if os.path.exists(_test_db_path):
             try:
                 os.remove(_test_db_path)

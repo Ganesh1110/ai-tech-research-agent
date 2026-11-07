@@ -19,6 +19,8 @@ import { Settings } from "./pages/Settings"
 import { StartupStudio } from "./pages/StartupStudio"
 import { ProductLab } from "./pages/ProductLab"
 import { GrowthCenter } from "./pages/GrowthCenter"
+import IdeaVault from "./pages/IdeaVault"
+import ProblemRadar from "./pages/ProblemRadar"
 import { ErrorBoundary } from "./components/common/ErrorBoundary"
 
 import {
@@ -257,6 +259,24 @@ export default function App() {
               onQuickBrainstorm={handleQuickBrainstorm}
               onTriggerProcess={handleTriggerProcess}
               isProcessing={isProcessing}
+            />
+          )}
+
+          {activeTab === "idea_vault" && (
+            <IdeaVault
+              onNavigate={(tab) => {
+                if (tab === "startup-studio") setActiveTab("startup_studio")
+                else setActiveTab(tab)
+              }}
+            />
+          )}
+
+          {activeTab === "problem_radar" && (
+            <ProblemRadar
+              onNavigate={(tab) => {
+                if (tab === "idea-vault") setActiveTab("idea_vault")
+                else setActiveTab(tab)
+              }}
             />
           )}
 

@@ -242,3 +242,79 @@ export async function updateSkill(skillId, skillData) {
     body: JSON.stringify(skillData),
   })
 }
+
+// ---- Idea Vault & Global Problem Radar --------------------------------
+
+export async function fetchIdeas(status = "") {
+  const query = status ? `?status=${encodeURIComponent(status)}` : ""
+  return apiFetch(`/ideas${query}`)
+}
+
+export async function createIdea(data) {
+  return apiFetch("/ideas", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function fetchIdea(ideaId) {
+  return apiFetch(`/ideas/${ideaId}`)
+}
+
+export async function updateIdea(ideaId, data) {
+  return apiFetch(`/ideas/${ideaId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteIdea(ideaId) {
+  return apiFetch(`/ideas/${ideaId}`, {
+    method: "DELETE",
+  })
+}
+
+export async function validateIdea(ideaId) {
+  return apiFetch(`/ideas/${ideaId}/validate`, {
+    method: "POST",
+  })
+}
+
+export async function promoteIdea(ideaId) {
+  return apiFetch(`/ideas/${ideaId}/promote`, {
+    method: "POST",
+  })
+}
+
+export async function fetchProblems(params = {}) {
+  const searchParams = new URLSearchParams()
+  if (params.category && params.category !== "All") searchParams.set("category", params.category)
+  if (params.source && params.source !== "All") searchParams.set("source", params.source)
+  if (params.min_score) searchParams.set("min_score", params.min_score)
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : ""
+  return apiFetch(`/problems${qs}`)
+}
+
+export async function createProblem(data) {
+  return apiFetch("/problems", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+}
+
+export async function scanProblems(limit = 15) {
+  return apiFetch(`/problems/scan?limit=${limit}`, {
+    method: "POST",
+  })
+}
+
+export async function updateProblem(problemId, data) {
+  return apiFetch(`/problems/${problemId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+}
