@@ -74,6 +74,14 @@ STARTER_IDEAS = [
         "monetization_hypothesis": "$39/mo subscription for weekly problem-digest and instant alert on competitor outage complaints",
         "tags": ["Growth OS", "Market Intelligence", "SaaS", "IndieHacker"],
     },
+    {
+        "title": "🎮 College LAN Arcade (Zero-Install Campus Gaming OS)",
+        "problem_statement": "College students in dorms, labs, and hackathons struggle to play casual multiplayer games together due to restrictive campus firewalls, blocked gaming ports, high latency, and heavy download/install friction.",
+        "proposed_solution": "A modular host-authoritative multiplayer LAN arcade in pure Python standard library with zero external dependencies. Features 22 classic games (Chess, Battleship, Connect Four, 2048, Wordle Duel, Typing Racer, Bingo), dual access via Web Browser (ttyd port 8220) or 1-command SSH (`ssh arcade@server`), host-authoritative state, privacy enforcement, and seamless instant rematches.",
+        "target_audience": "College students, campus computer science clubs, hackathon organizers, dorm networks",
+        "monetization_hypothesis": "Open-core campus edition; club/event licenses with custom university branding, tournament leaderboard daemons, and custom trivia packs ($49/event or semester)",
+        "tags": ["Gaming", "LAN", "Python", "Terminal", "Zero-Dependencies", "Docker", "Campus-Tech"],
+    },
 ]
 
 
@@ -214,7 +222,7 @@ class IdeaValidationService:
         profile = db.scalars(select(FounderProfile)).first()
         skills = db.scalars(select(SkillAssessment)).all()
 
-        founder_focus = profile.focus_area if profile else "AI Full-Stack Development"
+        founder_focus = ", ".join(profile.target_domains) if profile and profile.target_domains else (profile.title if profile else "AI Full-Stack Development")
         founder_skills = ", ".join([f"{s.skill_name} ({s.proficiency_level}%)" for s in skills]) if skills else "Python, React, FastAPI, LLMs"
 
         matching_problems = self.find_matching_problems_for_idea(db, idea, limit=3)

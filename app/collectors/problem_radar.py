@@ -85,6 +85,21 @@ CURATED_GLOBAL_PROBLEMS = [
             "Local offline models are great, but managing the inference server securely on-prem is a nightmare."
         ],
         "suggested_tech_stack": ["Presidio PII Redaction", "Ollama/vLLM Local Inference", "Audit Log Cryptography"]
+    },
+    {
+        "title": "Strict Campus & Office Firewalls Blocking Casual Local Multiplayer Games",
+        "description": "Students in dorms, labs, and hackathons cannot play quick casual multiplayer games together because university/corporate IT blocks UDP ports, external gaming lobbies, and requires administrative installation privileges.",
+        "category": "Consumer & SMB",
+        "source": "Reddit",
+        "source_url": "https://www.reddit.com/r/college/comments/dorm_lan_gaming_firewall",
+        "severity_score": 8.0,
+        "frequency_score": 8.6,
+        "commercial_viability": 7.4,
+        "sentiment_quotes": [
+            "Our university Wi-Fi blocks every single gaming server and peer-to-peer port.",
+            "We just wanted to play simple chess or trivia during hackathon breaks without downloading 500MB clients."
+        ],
+        "suggested_tech_stack": ["Python Standard Library", "WebSockets / Web Terminal (ttyd)", "Docker", "Zero-Dependency Architecture"]
     }
 ]
 
