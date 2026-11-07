@@ -197,7 +197,7 @@ export async function fetchKgGraph() {
   return apiFetch("/kg/graph")
 }
 
-export async function fetchConfig(configKey: string) {
+export async function fetchConfig(configKey) {
   return apiFetch(`/config/${encodeURIComponent(configKey)}`)
 }
 

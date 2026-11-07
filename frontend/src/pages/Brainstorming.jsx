@@ -118,7 +118,7 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
 
   function handleClear() {
     if (confirm("Clear brainstorming session history?")) {
-      const resetMsg = config ? config.value : "Brainstorming workspace reset. What technology, architecture, or repository should we explore next?"
+      const resetMsg = config || "Brainstorming workspace reset. What technology, architecture, or repository should we explore next?"
       const initial = [
         {
           id: 1,

@@ -19,7 +19,7 @@ import {
   RadarIcon,
 } from "../common/Icons"
 import { Sparkline } from "../common/Sparkline"
-import { fetchDashboardMetrics } from "../services/api"
+import { fetchDashboardMetrics } from "../../services/api"
 
 export const NAV_ITEMS = [
   { id: "overview", label: "Command Center", icon: HomeIcon },
