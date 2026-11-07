@@ -117,7 +117,9 @@ def seed_tech_frameworks(db: Session) -> int:
     return len(count)
 
 
-def list_tech_frameworks(db: Session) -> List[Dict[str, Any]]:
+def list_tech_frameworks(
+    db: Session, limit: Optional[int] = None, offset: Optional[int] = None
+) -> List[Dict[str, Any]]:
 
     """Return all active tech frameworks from the database, seeding if empty."""
 
@@ -125,15 +127,21 @@ def list_tech_frameworks(db: Session) -> List[Dict[str, Any]]:
 
         seed_tech_frameworks(db)
 
-    frameworks = db.scalars(
+    query = select(TechFramework).where(TechFramework.is_active.is_(True)).order_by(
 
-        select(TechFramework)
+        TechFramework.category, TechFramework.name
 
-        .where(TechFramework.is_active.is_(True))
+    )
 
-        .order_by(TechFramework.category, TechFramework.name)
+    if offset is not None:
 
-    ).all()
+        query = query.offset(offset)
+
+    if limit is not None:
+
+        query = query.limit(limit)
+
+    frameworks = db.scalars(query).all()
 
     return [_framework_to_dict(f) for f in frameworks]
 

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { FlameIcon, GithubIcon, ExternalLinkIcon, StarIcon, SparklesIcon } from "../components/common/Icons"
 import { TechFrameworksDirectory } from "../components/common/TechFrameworksDirectory"
+import { Pagination } from "../components/common/Pagination"
 import { fetchTrending } from "../services/api"
 
 export function Trending({ onBrainstormWithFramework }) {
@@ -10,6 +11,8 @@ export function Trending({ onBrainstormWithFramework }) {
   const [trendingTopics, setTrendingTopics] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 6
 
   useEffect(() => {
     let cancelled = false
@@ -23,6 +26,7 @@ export function Trending({ onBrainstormWithFramework }) {
           setTrendingRepos(resR.items || [])
           setTrendingTopics(resT.items || [])
           setError(null)
+          setPage(1)
         }
       } catch (err) {
         if (!cancelled) {
@@ -37,6 +41,11 @@ export function Trending({ onBrainstormWithFramework }) {
     load()
     return () => { cancelled = true }
   }, [])
+
+  const totalPages = Math.max(1, Math.ceil(trendingRepos.length / PAGE_SIZE))
+  const currentPage = Math.max(1, Math.min(page, totalPages))
+  const start = (currentPage - 1) * PAGE_SIZE
+  const paginatedRepos = trendingRepos.slice(start, start + PAGE_SIZE)
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -153,7 +162,7 @@ export function Trending({ onBrainstormWithFramework }) {
               gap: 18,
             }}
           >
-            {trendingRepos.map((repo, i) => (
+            {paginatedRepos.map((repo, i) => (
               <div
                 key={repo.id || i}
                 className="glass-panel"
@@ -230,6 +239,15 @@ export function Trending({ onBrainstormWithFramework }) {
               </div>
             ))}
           </div>
+
+          {trendingRepos.length > PAGE_SIZE && (
+            <Pagination
+              total={trendingRepos.length}
+              page={currentPage}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          )}
         </>
       )}
     </div>

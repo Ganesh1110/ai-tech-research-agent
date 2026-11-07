@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import {
   RocketIcon,
   RefreshIcon,
@@ -14,9 +14,11 @@ import {
   updateOpportunityStatus,
   createProductBlueprint,
 } from "../services/api"
+import { Pagination } from "../components/common/Pagination"
 
 export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }) {
   const [opportunities, setOpportunities] = useState([])
+  const [totalOpportunities, setTotalOpportunities] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -24,6 +26,8 @@ export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }
   const [minScore, setMinScore] = useState(0)
   const [selectedOpp, setSelectedOpp] = useState(null)
   const [statusMessage, setStatusMessage] = useState("")
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
 
   const loadOpportunities = useCallback(async () => {
     setIsLoading(true)
@@ -31,18 +35,22 @@ export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }
       const res = await getStartupOpportunities({
         status: statusFilter === "all" ? null : statusFilter,
         min_score: minScore > 0 ? minScore : null,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
       })
       if (res && res.items) {
         setOpportunities(res.items)
+        setTotalOpportunities(res.total || 0)
       }
     } catch (err) {
       console.error("Failed to load opportunities:", err)
     } finally {
       setIsLoading(false)
     }
-  }, [statusFilter, minScore])
+  }, [statusFilter, minScore, page])
 
   useEffect(() => {
+    setPage(1)
     loadOpportunities()
   }, [loadOpportunities])
 
@@ -532,6 +540,14 @@ export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }
               </div>
             )
           })}
+          {totalOpportunities > PAGE_SIZE && (
+            <Pagination
+              total={totalOpportunities}
+              page={page}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       )}
     </div>

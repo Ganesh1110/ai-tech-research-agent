@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
   fetchProblems,
   scanProblems,
@@ -17,6 +17,7 @@ import {
   LightbulbIcon,
   CheckCircleIcon,
 } from "../components/common/Icons"
+import { Pagination } from "../components/common/Pagination"
 
 export default function ProblemRadar({ onNavigate }) {
   const [problems, setProblems] = useState([])
@@ -40,6 +41,9 @@ export default function ProblemRadar({ onNavigate }) {
   const [dbCategories, setDbCategories] = useState([])
   const [dbSources, setDbSources] = useState([])
   const [filtersLoaded, setFiltersLoaded] = useState(false)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
+  const [totalProblems, setTotalProblems] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -72,7 +76,7 @@ export default function ProblemRadar({ onNavigate }) {
 
   useEffect(() => {
     loadProblems()
-  }, [selectedCategory, selectedSource])
+  }, [selectedCategory, selectedSource, page])
 
   async function loadProblems() {
     setLoading(true)
@@ -81,8 +85,11 @@ export default function ProblemRadar({ onNavigate }) {
       const data = await fetchProblems({
         category: selectedCategory,
         source: selectedSource,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
       })
       setProblems(data.problems || [])
+      setTotalProblems(data.total || 0)
     } catch (err) {
       setError(err.message || "Failed to load global problems")
     } finally {
@@ -723,6 +730,14 @@ export default function ProblemRadar({ onNavigate }) {
               </div>
             )
           })}
+          {totalProblems > PAGE_SIZE && (
+            <Pagination
+              total={totalProblems}
+              page={page}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       )}
     </div>

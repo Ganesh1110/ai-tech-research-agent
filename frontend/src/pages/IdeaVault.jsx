@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
   fetchIdeas,
   createIdea,
@@ -18,9 +18,11 @@ import {
   TrendingUpIcon,
   ExternalLinkIcon,
 } from "../components/common/Icons"
+import { Pagination } from "../components/common/Pagination"
 
 export default function IdeaVault({ onNavigate }) {
   const [ideas, setIdeas] = useState([])
+  const [totalIdeas, setTotalIdeas] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filterStatus, setFilterStatus] = useState("all")
@@ -28,6 +30,8 @@ export default function IdeaVault({ onNavigate }) {
   const [validatingId, setValidatingId] = useState(null)
   const [promotingId, setPromotingId] = useState(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
 
   // Form state
   const [formTitle, setFormTitle] = useState("")
@@ -40,14 +44,15 @@ export default function IdeaVault({ onNavigate }) {
 
   useEffect(() => {
     loadIdeas()
-  }, [])
+  }, [filterStatus, page])
 
   async function loadIdeas() {
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchIdeas()
+      const data = await fetchIdeas(filterStatus === "all" ? "" : filterStatus, PAGE_SIZE, (page - 1) * PAGE_SIZE)
       setIdeas(data.ideas || [])
+      setTotalIdeas(data.total || 0)
     } catch (err) {
       setError(err.message || "Failed to load ideas from Idea Vault")
     } finally {
@@ -139,11 +144,11 @@ export default function IdeaVault({ onNavigate }) {
   })
 
   // KPI Calculations
-  const totalCount = ideas.length
+  const totalCount = totalIdeas
   const validatedCount = ideas.filter((i) => i.status === "validated").length
   const promotedCount = ideas.filter((i) => i.status === "promoted").length
   const avgScore = totalCount > 0
-    ? Math.round(ideas.reduce((acc, curr) => acc + (curr.validation_score || 0), 0) / totalCount)
+    ? Math.round(ideas.reduce((acc, curr) => acc + (curr.validation_score || 0), 0) / ideas.length)
     : 0
 
   return (
@@ -805,6 +810,14 @@ export default function IdeaVault({ onNavigate }) {
               </div>
             )
           })}
+          {totalIdeas > PAGE_SIZE && (
+            <Pagination
+              total={totalIdeas}
+              page={page}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       )}
     </div>

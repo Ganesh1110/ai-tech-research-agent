@@ -203,11 +203,16 @@ def get_config(config_key: str) -> Dict[str, Optional[str]]:
 # ---- Frameworks --------------------------------------------------------
 
 @router.get("/frameworks", response_model=FrameworksResponse)
-def list_tech_frameworks() -> FrameworksResponse:
+def list_tech_frameworks(
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+) -> FrameworksResponse:
 
     with SessionLocal() as db:
 
-        frameworks = svc_list_tech_frameworks(db)
+        all_frameworks = svc_list_tech_frameworks(db)
+
+        frameworks = svc_list_tech_frameworks(db, limit=limit, offset=offset)
 
         return FrameworksResponse(
 
@@ -215,7 +220,7 @@ def list_tech_frameworks() -> FrameworksResponse:
 
             categories=svc_list_categories(db),
 
-            count=len(frameworks),
+            count=len(all_frameworks),
 
         )
 
@@ -223,49 +228,73 @@ def list_tech_frameworks() -> FrameworksResponse:
 # ---- Content: Tech Resources, Trending Items, Dashboard Metrics, Problem Filters ------
 
 @router.get("/content/tech-resources", response_model=TechResourceListResponse)
-def get_tech_resources(resource_type: Optional[str] = None) -> TechResourceListResponse:
+def get_tech_resources(
+    resource_type: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+) -> TechResourceListResponse:
 
     with SessionLocal() as db:
 
-        items = list_tech_resources(db, resource_type=resource_type)
+        all_items = list_tech_resources(db, resource_type=resource_type)
+
+        items = list_tech_resources(
+            db, resource_type=resource_type, limit=limit, offset=offset
+        )
 
         return TechResourceListResponse(
 
             items=[TechResourceItem(**i) for i in items],
 
-            total=len(items),
+            total=len(all_items),
 
         )
 
 
 @router.get("/content/trending", response_model=TrendingItemListResponse)
-def get_trending(item_type: Optional[str] = None) -> TrendingItemListResponse:
+def get_trending(
+    item_type: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+) -> TrendingItemListResponse:
 
     with SessionLocal() as db:
 
-        items = list_trending_items(db, item_type=item_type)
+        all_items = list_trending_items(db, item_type=item_type)
+
+        items = list_trending_items(
+            db, item_type=item_type, limit=limit, offset=offset
+        )
 
         return TrendingItemListResponse(
 
             items=[TrendingItemResponse(**i) for i in items],
 
-            total=len(items),
+            total=len(all_items),
 
         )
 
 
 @router.get("/content/dashboard-metrics", response_model=DashboardMetricListResponse)
-def get_dashboard_metrics(metric_type: Optional[str] = None) -> DashboardMetricListResponse:
+def get_dashboard_metrics(
+    metric_type: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+) -> DashboardMetricListResponse:
 
     with SessionLocal() as db:
 
-        items = list_dashboard_metrics(db, metric_type=metric_type)
+        all_items = list_dashboard_metrics(db, metric_type=metric_type)
+
+        items = list_dashboard_metrics(
+            db, metric_type=metric_type, limit=limit, offset=offset
+        )
 
         return DashboardMetricListResponse(
 
             items=[DashboardMetricItem(**i) for i in items],
 
-            total=len(items),
+            total=len(all_items),
 
         )
 
@@ -1723,6 +1752,7 @@ def get_startup_opportunities(
     status: Optional[str] = None,
     min_score: int = 0,
     limit: int = 50,
+    offset: int = 0,
 ) -> StartupOpportunityListResponse:
     with SessionLocal() as db:
         query = db.query(StartupOpportunity)
@@ -1730,11 +1760,17 @@ def get_startup_opportunities(
             query = query.filter(StartupOpportunity.status == status)
         if min_score > 0:
             query = query.filter(StartupOpportunity.overall_score >= min_score)
-        
-        opps = query.order_by(StartupOpportunity.overall_score.desc()).limit(limit).all()
+
+        total = query.count()
+        opps = (
+            query.order_by(StartupOpportunity.overall_score.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
         return StartupOpportunityListResponse(
             items=[_opp_to_response(o) for o in opps],
-            total=len(opps),
+            total=total,
         )
 
 
@@ -1989,13 +2025,20 @@ def update_skill_assessment(
 # ---- Idea Vault Endpoints --------------------------------------------
 
 @router.get("/ideas", response_model=IdeaVaultItemListResponse)
-def get_idea_vault_items(status: Optional[str] = None) -> IdeaVaultItemListResponse:
+def get_idea_vault_items(
+    status: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> IdeaVaultItemListResponse:
     """Fetch ideas from the founder Idea Vault, seeding starter ideas if empty."""
     with SessionLocal() as db:
         service = IdeaValidationService()
         ideas = service.get_or_seed_ideas(db)
         if status:
             ideas = [i for i in ideas if i.status == status]
+
+        total = len(ideas)
+        paginated = ideas[offset : offset + limit]
 
         return IdeaVaultItemListResponse(
             ideas=[
@@ -2013,9 +2056,9 @@ def get_idea_vault_items(status: Optional[str] = None) -> IdeaVaultItemListRespo
                     created_at=i.created_at.isoformat() if i.created_at else None,
                     updated_at=i.updated_at.isoformat() if i.updated_at else None,
                 )
-                for i in ideas
+                for i in paginated
             ],
-            total=len(ideas),
+            total=total,
         )
 
 
@@ -2168,6 +2211,8 @@ def get_global_problems(
     category: Optional[str] = None,
     source: Optional[str] = None,
     min_score: Optional[float] = None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> GlobalProblemListResponse:
     """Fetch discovered global consumer & developer pain points."""
     with SessionLocal() as db:
@@ -2182,6 +2227,9 @@ def get_global_problems(
             problems = [p for p in problems if p.source.lower() == source.lower()]
         if min_score is not None:
             problems = [p for p in problems if p.composite_pain_score >= min_score]
+
+        total = len(problems)
+        paginated = problems[offset : offset + limit]
 
         return GlobalProblemListResponse(
             problems=[
@@ -2202,9 +2250,9 @@ def get_global_problems(
                     status=p.status or "active",
                     discovered_at=p.discovered_at.isoformat() if p.discovered_at else None,
                 )
-                for p in problems
+                for p in paginated
             ],
-            total=len(problems),
+            total=total,
         )
 
 

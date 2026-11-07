@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react"
 import { SearchIcon, ExternalLinkIcon, SparklesIcon, CheckCircleIcon, FlameIcon } from "./Icons"
+import { Pagination } from "./Pagination"
 import { fetchFrameworks } from "../../services/api"
 
 export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
@@ -8,6 +9,8 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 12
 
   useEffect(() => {
     let cancelled = false
@@ -18,6 +21,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
         if (!cancelled) {
           setData(result.frameworks || [])
           setError(null)
+          setPage(1)
         }
       } catch (err) {
         if (!cancelled) {
@@ -38,15 +42,15 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
     }
   }, [])
 
-  const frameworks = useMemo(() => data || [], [data])
+  const allFrameworks = useMemo(() => data || [], [data])
 
   const categories = useMemo(() => {
-    const set = new Set(frameworks.map((item) => item.category))
+    const set = new Set(allFrameworks.map((item) => item.category))
     return ["all", ...Array.from(set)]
-  }, [frameworks])
+  }, [allFrameworks])
 
   const filtered = useMemo(() => {
-    return frameworks.filter((item) => {
+    return allFrameworks.filter((item) => {
       const matchCat = selectedCategory === "all" || item.category === selectedCategory
       const matchSearch =
         !search ||
@@ -56,7 +60,17 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
         item.bestFor.toLowerCase().includes(search.toLowerCase())
       return matchCat && matchSearch
     })
-  }, [selectedCategory, search, frameworks])
+  }, [selectedCategory, search, allFrameworks])
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.max(1, Math.min(page, totalPages))
+  const start = (currentPage - 1) * PAGE_SIZE
+  const frameworks = filtered.slice(start, start + PAGE_SIZE)
+
+  useEffect(() => {
+    setPage(1)
+  }, [selectedCategory, search])
 
   if (loading) {
     return (
@@ -285,6 +299,15 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
           </div>
         ))}
       </div>
+
+      {filtered.length > PAGE_SIZE && (
+        <Pagination
+          total={filtered.length}
+          page={currentPage}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   )
 }

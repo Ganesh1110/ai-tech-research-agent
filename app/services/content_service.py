@@ -118,7 +118,12 @@ def seed_tech_resources(db: Session) -> int:
     return count
 
 
-def list_tech_resources(db: Session, resource_type: Optional[str] = None) -> List[Dict[str, Any]]:
+def list_tech_resources(
+    db: Session,
+    resource_type: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+) -> List[Dict[str, Any]]:
 
     if not db.scalars(select(TechResource.resource_id)).all():
 
@@ -131,6 +136,14 @@ def list_tech_resources(db: Session, resource_type: Optional[str] = None) -> Lis
         query = query.where(TechResource.resource_type == resource_type)
 
     query = query.order_by(TechResource.resource_type, TechResource.name)
+
+    if offset is not None:
+
+        query = query.offset(offset)
+
+    if limit is not None:
+
+        query = query.limit(limit)
 
     resources = db.scalars(query).all()
 
@@ -224,7 +237,10 @@ def seed_trending_items(db: Session) -> int:
 
 
 def list_trending_items(
-    db: Session, item_type: Optional[str] = None
+    db: Session,
+    item_type: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
 
     if not db.scalars(select(TrendingItem.item_id)).all():
@@ -238,6 +254,14 @@ def list_trending_items(
         query = query.where(TrendingItem.item_type == item_type)
 
     query = query.order_by(TrendingItem.item_type, TrendingItem.name)
+
+    if offset is not None:
+
+        query = query.offset(offset)
+
+    if limit is not None:
+
+        query = query.limit(limit)
 
     items = db.scalars(query).all()
 
@@ -313,7 +337,10 @@ def seed_dashboard_metrics(db: Session) -> int:
 
 
 def list_dashboard_metrics(
-    db: Session, metric_type: Optional[str] = None
+    db: Session,
+    metric_type: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
 
     if not db.scalars(select(DashboardMetric.metric_name)).all():
@@ -327,6 +354,14 @@ def list_dashboard_metrics(
         query = query.where(DashboardMetric.metric_type == metric_type)
 
     query = query.order_by(DashboardMetric.metric_type, DashboardMetric.metric_name)
+
+    if offset is not None:
+
+        query = query.offset(offset)
+
+    if limit is not None:
+
+        query = query.limit(limit)
 
     metrics = db.scalars(query).all()
 

@@ -165,24 +165,40 @@ export async function runEvaluate() {
 }
 
 // Tech Frameworks Directory
-export async function fetchFrameworks() {
-  return apiFetch("/frameworks")
+export async function fetchFrameworks(limit = null, offset = null) {
+  const query = new URLSearchParams()
+  if (limit !== null) query.append("limit", limit)
+  if (offset !== null) query.append("offset", offset)
+  const qs = query.toString() ? `?${query.toString()}` : ""
+  return apiFetch(`/frameworks${qs}`)
 }
 
 // Content: Tech Resources, Trending Items, Dashboard Metrics, Problem Filters
-export async function fetchTechResources(resourceType = null) {
-  const query = resourceType ? `?resource_type=${encodeURIComponent(resourceType)}` : ""
-  return apiFetch(`/content/tech-resources${query}`)
+export async function fetchTechResources(resourceType = null, limit = null, offset = null) {
+  const query = new URLSearchParams()
+  if (resourceType) query.append("resource_type", resourceType)
+  if (limit !== null) query.append("limit", limit)
+  if (offset !== null) query.append("offset", offset)
+  const qs = query.toString() ? `?${query.toString()}` : ""
+  return apiFetch(`/content/tech-resources${qs}`)
 }
 
-export async function fetchTrending(itemType = null) {
-  const query = itemType ? `?item_type=${encodeURIComponent(itemType)}` : ""
-  return apiFetch(`/content/trending${query}`)
+export async function fetchTrending(itemType = null, limit = null, offset = null) {
+  const query = new URLSearchParams()
+  if (itemType) query.append("item_type", itemType)
+  if (limit !== null) query.append("limit", limit)
+  if (offset !== null) query.append("offset", offset)
+  const qs = query.toString() ? `?${query.toString()}` : ""
+  return apiFetch(`/content/trending${qs}`)
 }
 
-export async function fetchDashboardMetrics(metricType = null) {
-  const query = metricType ? `?metric_type=${encodeURIComponent(metricType)}` : ""
-  return apiFetch(`/content/dashboard-metrics${query}`)
+export async function fetchDashboardMetrics(metricType = null, limit = null, offset = null) {
+  const query = new URLSearchParams()
+  if (metricType) query.append("metric_type", metricType)
+  if (limit !== null) query.append("limit", limit)
+  if (offset !== null) query.append("offset", offset)
+  const qs = query.toString() ? `?${query.toString()}` : ""
+  return apiFetch(`/content/dashboard-metrics${qs}`)
 }
 
 export async function fetchProblemCategories() {
@@ -206,7 +222,8 @@ export async function getStartupOpportunities(params = {}) {
   const query = new URLSearchParams()
   if (params.status) query.append("status", params.status)
   if (params.min_score) query.append("min_score", params.min_score)
-  if (params.limit) query.append("limit", params.limit)
+  if (params.limit !== null && params.limit !== undefined) query.append("limit", params.limit)
+  if (params.offset !== null && params.offset !== undefined) query.append("offset", params.offset)
   const qs = query.toString() ? `?${query.toString()}` : ""
   return apiFetch(`/startup/opportunities${qs}`)
 }
@@ -277,9 +294,13 @@ export async function updateSkill(skillId, skillData) {
 
 // ---- Idea Vault & Global Problem Radar --------------------------------
 
-export async function fetchIdeas(status = "") {
-  const query = status ? `?status=${encodeURIComponent(status)}` : ""
-  return apiFetch(`/ideas${query}`)
+export async function fetchIdeas(status = "", limit = 50, offset = 0) {
+  const query = new URLSearchParams()
+  if (status) query.append("status", status)
+  if (limit !== null) query.append("limit", limit)
+  if (offset !== null) query.append("offset", offset)
+  const qs = query.toString() ? `?${query.toString()}` : ""
+  return apiFetch(`/ideas${qs}`)
 }
 
 export async function createIdea(data) {
@@ -325,6 +346,8 @@ export async function fetchProblems(params = {}) {
   if (params.category && params.category !== "All") searchParams.set("category", params.category)
   if (params.source && params.source !== "All") searchParams.set("source", params.source)
   if (params.min_score) searchParams.set("min_score", params.min_score)
+  if (params.limit !== null && params.limit !== undefined) searchParams.set("limit", params.limit)
+  if (params.offset !== null && params.offset !== undefined) searchParams.set("offset", params.offset)
   const qs = searchParams.toString() ? `?${searchParams.toString()}` : ""
   return apiFetch(`/problems${qs}`)
 }
