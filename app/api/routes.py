@@ -47,10 +47,16 @@ from app.api.schemas import (
     FrameworksResponse,
     TechResourceItem,
     TechResourceListResponse,
+    TechResourceCreate,
+    TechResourceUpdate,
     TrendingItemResponse,
     TrendingItemListResponse,
+    TrendingItemCreate,
+    TrendingItemUpdate,
     DashboardMetricItem,
     DashboardMetricListResponse,
+    DashboardMetricCreate,
+    DashboardMetricUpdate,
     ProblemCategoriesResponse,
     ProblemSourcesResponse,
     StartupOpportunityResponse,
@@ -74,6 +80,16 @@ from app.api.schemas import (
     GlobalProblemListResponse,
     CreateProblemRequest,
     UpdateProblemRequest,
+
+
+    SystemConfigCreate,
+
+    SystemConfigUpdate,
+
+    FrameworkCreate,
+
+    FrameworkUpdate,
+
 )
 from app.config import settings
 from app.database.db import SessionLocal
@@ -89,6 +105,7 @@ from app.database.models import (
 from app.services.startup_intelligence import StartupIntelligenceService
 from app.services.idea_validation import IdeaValidationService
 from app.services.tech_frameworks import (
+    get_tech_framework as svc_get_tech_framework,
     list_categories as svc_list_categories,
     list_tech_frameworks as svc_list_tech_frameworks,
 )
@@ -267,6 +284,795 @@ def get_problem_sources() -> ProblemSourcesResponse:
     with SessionLocal() as db:
 
         return ProblemSourcesResponse(sources=list_problem_sources(db))
+
+
+# ============================================================================
+# Content CRUD Routes — TechFrameworks, TechResources, TrendingItems,
+# DashboardMetrics, SystemConfig
+# ============================================================================
+
+# ---------- TechFrameworks ----------
+
+@router.get("/frameworks/{framework_id}", response_model=FrameworkItem)
+def get_tech_framework_by_id(framework_id: str) -> FrameworkItem:
+
+    with SessionLocal() as db:
+
+        fw = svc_get_tech_framework(db, framework_id)
+
+        if not fw:
+
+            raise HTTPException(status_code=404, detail="Tech framework not found")
+
+        return FrameworkItem(**fw)
+
+
+@router.post("/frameworks", response_model=FrameworkItem)
+def create_tech_framework(req: FrameworkCreate) -> FrameworkItem:
+
+    with SessionLocal() as db:
+
+        from app.database.models import TechFramework
+
+        existing = db.scalars(
+
+            select(TechFramework).where(TechFramework.framework_id == req.framework_id)
+
+        ).first()
+
+        if existing:
+
+            raise HTTPException(
+
+                status_code=400, detail=f"Framework {req.framework_id} already exists"
+
+            )
+
+        fw = TechFramework(
+
+            framework_id=req.framework_id,
+
+            category=req.category,
+
+            name=req.name,
+
+            framework=req.framework,
+
+            runtime=req.runtime,
+
+            maturity=req.maturity,
+
+            maturity_color=req.maturity_color,
+
+            tagline=req.tagline,
+
+            key_features=req.key_features,
+
+            best_for=req.best_for,
+
+            docs_url=req.docs_url,
+
+            is_active=req.is_active,
+
+        )
+
+        db.add(fw)
+
+        db.commit()
+
+        db.refresh(fw)
+
+        return FrameworkItem(**_framework_model_to_dict(fw))
+
+
+@router.patch("/frameworks/{framework_id}", response_model=FrameworkItem)
+def update_tech_framework(framework_id: str, req: FrameworkUpdate) -> FrameworkItem:
+
+    with SessionLocal() as db:
+
+        from app.database.models import TechFramework
+
+        fw = db.scalars(
+
+            select(TechFramework).where(TechFramework.framework_id == framework_id)
+
+        ).first()
+
+        if not fw:
+
+            raise HTTPException(status_code=404, detail="Tech framework not found")
+
+        update_data = req.model_dump(exclude_unset=True)
+
+        field_map = {
+
+            "maturity_color": "maturity_color",
+
+        }
+
+        for key, value in update_data.items():
+
+            col = field_map.get(key, key)
+
+            if hasattr(fw, col):
+
+                setattr(fw, col, value)
+
+        db.commit()
+
+        db.refresh(fw)
+
+        return FrameworkItem(**_framework_model_to_dict(fw))
+
+
+@router.delete("/frameworks/{framework_id}")
+def delete_tech_framework(framework_id: str):
+
+    with SessionLocal() as db:
+
+        from app.database.models import TechFramework
+
+        fw = db.scalars(
+
+            select(TechFramework).where(TechFramework.framework_id == framework_id)
+
+        ).first()
+
+        if not fw:
+
+            raise HTTPException(status_code=404, detail="Tech framework not found")
+
+        db.delete(fw)
+
+        db.commit()
+
+        return {"deleted": True, "framework_id": framework_id}
+
+
+# ---------- TechResources ----------
+
+@router.get("/content/tech-resources/{resource_id}", response_model=TechResourceItem)
+def get_tech_resource_by_id(resource_id: str) -> TechResourceItem:
+
+    with SessionLocal() as db:
+
+        from app.database.models import TechResource
+
+        res = db.scalars(
+
+            select(TechResource).where(TechResource.resource_id == resource_id)
+
+        ).first()
+
+        if not res:
+
+            raise HTTPException(status_code=404, detail="Tech resource not found")
+
+        return TechResourceItem(**_resource_model_to_dict(res))
+
+
+@router.post("/content/tech-resources", response_model=TechResourceItem)
+def create_tech_resource(req: TechResourceCreate) -> TechResourceItem:
+
+    with SessionLocal() as db:
+
+        from app.database.models import TechResource
+
+        existing = db.scalars(
+
+            select(TechResource).where(TechResource.resource_id == req.resource_id)
+
+        ).first()
+
+        if existing:
+
+            raise HTTPException(
+
+                status_code=400, detail=f"Tech resource {req.resource_id} already exists"
+
+            )
+
+        res = TechResource(
+
+            resource_id=req.resource_id,
+
+            resource_type=req.resource_type,
+
+            name=req.name,
+
+            org=req.org,
+
+            context=req.context,
+
+            strengths=req.strengths,
+
+            suitability=req.suitability,
+
+            benchmark=req.benchmark,
+
+            size=req.size,
+
+            desc=req.desc,
+
+            url=req.url,
+
+            is_active=req.is_active,
+
+        )
+
+        db.add(res)
+
+        db.commit()
+
+        db.refresh(res)
+
+        return TechResourceItem(**_resource_model_to_dict(res))
+
+
+@router.patch("/content/tech-resources/{resource_id}", response_model=TechResourceItem)
+def update_tech_resource(resource_id: str, req: TechResourceUpdate) -> TechResourceItem:
+
+    with SessionLocal() as db:
+
+        from app.database.models import TechResource
+
+        res = db.scalars(
+
+            select(TechResource).where(TechResource.resource_id == resource_id)
+
+        ).first()
+
+        if not res:
+
+            raise HTTPException(status_code=404, detail="Tech resource not found")
+
+        update_data = req.model_dump(exclude_unset=True)
+
+        for key, value in update_data.items():
+
+            if hasattr(res, key):
+
+                setattr(res, key, value)
+
+        db.commit()
+
+        db.refresh(res)
+
+        return TechResourceItem(**_resource_model_to_dict(res))
+
+
+@router.delete("/content/tech-resources/{resource_id}")
+def delete_tech_resource(resource_id: str):
+
+    with SessionLocal() as db:
+
+        from app.database.models import TechResource
+
+        res = db.scalars(
+
+            select(TechResource).where(TechResource.resource_id == resource_id)
+
+        ).first()
+
+        if not res:
+
+            raise HTTPException(status_code=404, detail="Tech resource not found")
+
+        db.delete(res)
+
+        db.commit()
+
+        return {"deleted": True, "resource_id": resource_id}
+
+
+# ---------- TrendingItems ----------
+
+@router.get("/content/trending/{item_id}", response_model=TrendingItemResponse)
+def get_trending_item_by_id(item_id: str) -> TrendingItemResponse:
+
+    with SessionLocal() as db:
+
+        from app.database.models import TrendingItem
+
+        item = db.scalars(
+
+            select(TrendingItem).where(TrendingItem.item_id == item_id)
+
+        ).first()
+
+        if not item:
+
+            raise HTTPException(status_code=404, detail="Trending item not found")
+
+        return TrendingItemResponse(**_trending_model_to_dict(item))
+
+
+@router.post("/content/trending", response_model=TrendingItemResponse)
+def create_trending_item(req: TrendingItemCreate) -> TrendingItemResponse:
+
+    with SessionLocal() as db:
+
+        from app.database.models import TrendingItem
+
+        existing = db.scalars(
+
+            select(TrendingItem).where(TrendingItem.item_id == req.item_id)
+
+        ).first()
+
+        if existing:
+
+            raise HTTPException(
+
+                status_code=400, detail=f"Trending item {req.item_id} already exists"
+
+            )
+
+        item = TrendingItem(
+
+            item_id=req.item_id,
+
+            item_type=req.item_type,
+
+            name=req.name,
+
+            stars=req.stars,
+
+            forks=req.forks,
+
+            growth=req.growth,
+
+            category=req.category,
+
+            desc=req.desc,
+
+            count=req.count,
+
+            url=req.url,
+
+            is_active=req.is_active,
+
+        )
+
+        db.add(item)
+
+        db.commit()
+
+        db.refresh(item)
+
+        return TrendingItemResponse(**_trending_model_to_dict(item))
+
+
+@router.patch("/content/trending/{item_id}", response_model=TrendingItemResponse)
+def update_trending_item(item_id: str, req: TrendingItemUpdate) -> TrendingItemResponse:
+
+    with SessionLocal() as db:
+
+        from app.database.models import TrendingItem
+
+        item = db.scalars(
+
+            select(TrendingItem).where(TrendingItem.item_id == item_id)
+
+        ).first()
+
+        if not item:
+
+            raise HTTPException(status_code=404, detail="Trending item not found")
+
+        update_data = req.model_dump(exclude_unset=True)
+
+        for key, value in update_data.items():
+
+            if hasattr(item, key):
+
+                setattr(item, key, value)
+
+        db.commit()
+
+        db.refresh(item)
+
+        return TrendingItemResponse(**_trending_model_to_dict(item))
+
+
+@router.delete("/content/trending/{item_id}")
+def delete_trending_item(item_id: str):
+
+    with SessionLocal() as db:
+
+        from app.database.models import TrendingItem
+
+        item = db.scalars(
+
+            select(TrendingItem).where(TrendingItem.item_id == item_id)
+
+        ).first()
+
+        if not item:
+
+            raise HTTPException(status_code=404, detail="Trending item not found")
+
+        db.delete(item)
+
+        db.commit()
+
+        return {"deleted": True, "item_id": item_id}
+
+
+# ---------- DashboardMetrics ----------
+
+@router.get("/content/dashboard-metrics/{metric_name}", response_model=DashboardMetricItem)
+def get_dashboard_metric_by_id(metric_name: str) -> DashboardMetricItem:
+
+    with SessionLocal() as db:
+
+        from app.database.models import DashboardMetric
+
+        metric = db.scalars(
+
+            select(DashboardMetric).where(DashboardMetric.metric_name == metric_name)
+
+        ).first()
+
+        if not metric:
+
+            raise HTTPException(status_code=404, detail="Dashboard metric not found")
+
+        return DashboardMetricItem(**_metric_model_to_dict(metric))
+
+
+@router.post("/content/dashboard-metrics", response_model=DashboardMetricItem)
+def create_dashboard_metric(req: DashboardMetricCreate) -> DashboardMetricItem:
+
+    with SessionLocal() as db:
+
+        from app.database.models import DashboardMetric
+
+        existing = db.scalars(
+
+            select(DashboardMetric).where(DashboardMetric.metric_name == req.metric_name)
+
+        ).first()
+
+        if existing:
+
+            raise HTTPException(
+
+                status_code=400, detail=f"Dashboard metric {req.metric_name} already exists"
+
+            )
+
+        metric = DashboardMetric(
+
+            metric_name=req.metric_name,
+
+            metric_type=req.metric_type,
+
+            label=req.label,
+
+            value=req.value,
+
+            color=req.color,
+
+            is_active=req.is_active,
+
+        )
+
+        db.add(metric)
+
+        db.commit()
+
+        db.refresh(metric)
+
+        return DashboardMetricItem(**_metric_model_to_dict(metric))
+
+
+@router.patch("/content/dashboard-metrics/{metric_name}", response_model=DashboardMetricItem)
+def update_dashboard_metric(metric_name: str, req: DashboardMetricUpdate) -> DashboardMetricItem:
+
+    with SessionLocal() as db:
+
+        from app.database.models import DashboardMetric
+
+        metric = db.scalars(
+
+            select(DashboardMetric).where(DashboardMetric.metric_name == metric_name)
+
+        ).first()
+
+        if not metric:
+
+            raise HTTPException(status_code=404, detail="Dashboard metric not found")
+
+        update_data = req.model_dump(exclude_unset=True)
+
+        for key, value in update_data.items():
+
+            if hasattr(metric, key):
+
+                setattr(metric, key, value)
+
+        db.commit()
+
+        db.refresh(metric)
+
+        return DashboardMetricItem(**_metric_model_to_dict(metric))
+
+
+@router.delete("/content/dashboard-metrics/{metric_name}")
+def delete_dashboard_metric(metric_name: str):
+
+    with SessionLocal() as db:
+
+        from app.database.models import DashboardMetric
+
+        metric = db.scalars(
+
+            select(DashboardMetric).where(DashboardMetric.metric_name == metric_name)
+
+        ).first()
+
+        if not metric:
+
+            raise HTTPException(status_code=404, detail="Dashboard metric not found")
+
+        db.delete(metric)
+
+        db.commit()
+
+        return {"deleted": True, "metric_name": metric_name}
+
+
+# ---------- SystemConfig ----------
+
+@router.get("/config/{config_key}")
+def get_config(config_key: str) -> Dict[str, Optional[str]]:
+
+    with SessionLocal() as db:
+
+        value = get_system_config(db, config_key)
+
+        if value is None:
+
+            raise HTTPException(status_code=404, detail="Config not found")
+
+        return {"key": config_key, "value": value}
+
+
+@router.post("/config", response_model=Dict[str, Any])
+def create_system_config(req: SystemConfigCreate) -> Dict[str, Any]:
+
+    with SessionLocal() as db:
+
+        from app.database.models import SystemConfig
+
+        existing = db.scalars(
+
+            select(SystemConfig).where(SystemConfig.config_key == req.config_key)
+
+        ).first()
+
+        if existing:
+
+            raise HTTPException(
+
+                status_code=400, detail=f"Config {req.config_key} already exists"
+
+            )
+
+        cfg = SystemConfig(
+
+            config_key=req.config_key,
+
+            config_value=req.config_value,
+
+            config_type=req.config_type,
+
+            description=req.description,
+
+            is_active=req.is_active,
+
+        )
+
+        db.add(cfg)
+
+        db.commit()
+
+        db.refresh(cfg)
+
+        return {
+
+            "key": cfg.config_key,
+
+            "value": cfg.config_value,
+
+            "type": cfg.config_type,
+
+            "description": cfg.description,
+
+            "is_active": cfg.is_active,
+
+        }
+
+
+@router.patch("/config/{config_key}", response_model=Dict[str, Any])
+def update_system_config(config_key: str, req: SystemConfigUpdate) -> Dict[str, Any]:
+
+    with SessionLocal() as db:
+
+        from app.database.models import SystemConfig
+
+        cfg = db.scalars(
+
+            select(SystemConfig).where(SystemConfig.config_key == config_key)
+
+        ).first()
+
+        if not cfg:
+
+            raise HTTPException(status_code=404, detail="Config not found")
+
+        update_data = req.model_dump(exclude_unset=True)
+
+        for key, value in update_data.items():
+
+            if hasattr(cfg, key):
+
+                setattr(cfg, key, value)
+
+        db.commit()
+
+        db.refresh(cfg)
+
+        return {
+
+            "key": cfg.config_key,
+
+            "value": cfg.config_value,
+
+            "type": cfg.config_type,
+
+            "description": cfg.description,
+
+            "is_active": cfg.is_active,
+
+        }
+
+
+@router.delete("/config/{config_key}")
+def delete_system_config(config_key: str):
+
+    with SessionLocal() as db:
+
+        from app.database.models import SystemConfig
+
+        cfg = db.scalars(
+
+            select(SystemConfig).where(SystemConfig.config_key == config_key)
+
+        ).first()
+
+        if not cfg:
+
+            raise HTTPException(status_code=404, detail="Config not found")
+
+        db.delete(cfg)
+
+        db.commit()
+
+        return {"deleted": True, "config_key": config_key}
+
+
+# ---------- Helper: SQLAlchemy model -> dict ----------
+
+def _framework_model_to_dict(fw) -> Dict[str, Any]:
+
+    return {
+
+        "id": fw.framework_id,
+
+        "category": fw.category,
+
+        "name": fw.name,
+
+        "framework": fw.framework,
+
+        "runtime": fw.runtime,
+
+        "maturity": fw.maturity,
+
+        "maturityColor": fw.maturity_color,
+
+        "tagline": fw.tagline,
+
+        "keyFeatures": fw.key_features or [],
+
+        "bestFor": fw.best_for,
+
+        "docsUrl": fw.docs_url,
+
+    }
+
+
+def _resource_model_to_dict(res) -> Dict[str, Any]:
+
+    return {
+
+        "id": res.resource_id,
+
+        "type": res.resource_type,
+
+        "name": res.name,
+
+        "org": res.org,
+
+        "context": res.context,
+
+        "strengths": res.strengths,
+
+        "suitability": res.suitability,
+
+        "benchmark": res.benchmark,
+
+        "size": res.size,
+
+        "desc": res.desc,
+
+        "url": res.url,
+
+        "is_active": res.is_active,
+
+    }
+
+
+def _trending_model_to_dict(item) -> Dict[str, Any]:
+
+    return {
+
+        "id": item.item_id,
+
+        "type": item.item_type,
+
+        "name": item.name,
+
+        "stars": item.stars,
+
+        "forks": item.forks,
+
+        "growth": item.growth,
+
+        "category": item.category,
+
+        "desc": item.desc,
+
+        "count": item.count,
+
+        "url": item.url,
+
+        "is_active": item.is_active,
+
+    }
+
+
+def _metric_model_to_dict(metric) -> Dict[str, Any]:
+
+    return {
+
+        "id": metric.metric_name,
+
+        "name": metric.metric_name,
+
+        "type": metric.metric_type,
+
+        "label": metric.label,
+
+        "value": metric.value,
+
+        "color": metric.color,
+
+        "is_active": metric.is_active,
+
+    }
 
 
 # ---- Agent -----------------------------------------------------------

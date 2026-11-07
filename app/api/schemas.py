@@ -521,6 +521,127 @@ class UpdateProblemRequest(BaseModel):
     commercial_viability: Optional[float] = None
 
 
+
+# ============================================================================
+# Content Validation Schemas (Create / Update requests with Pydantic validation)
+# ============================================================================
+
+class TechResourceCreate(BaseModel):
+    resource_id: str = Field(..., min_length=1, max_length=100, description="Unique resource identifier")
+    resource_type: str = Field(..., pattern=r"^(model|dataset|benchmark)$", description="Type: model, dataset, or benchmark")
+    name: str = Field(..., min_length=1, max_length=200, description="Resource name")
+    org: str = Field(default="", max_length=200, description="Organization / vendor")
+    context: str = Field(default="", max_length=200, description="Context / token window")
+    strengths: str = Field(default="", description="Key strengths")
+    suitability: str = Field(default="", description="Best use / deployment suitability")
+    benchmark: str = Field(default="", max_length=200, description="Benchmark scores")
+    size: str = Field(default="", max_length=200, description="Dataset size")
+    desc: str = Field(default="", description="Description")
+    url: str = Field(default="", max_length=500, description="Documentation / weights URL")
+    is_active: bool = Field(default=True)
+
+
+class TechResourceUpdate(BaseModel):
+    resource_type: Optional[str] = Field(None, pattern=r"^(model|dataset|benchmark)$")
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    org: Optional[str] = Field(None, max_length=200)
+    context: Optional[str] = Field(None, max_length=200)
+    strengths: Optional[str] = None
+    suitability: Optional[str] = None
+    benchmark: Optional[str] = Field(None, max_length=200)
+    size: Optional[str] = Field(None, max_length=200)
+    desc: Optional[str] = None
+    url: Optional[str] = Field(None, max_length=500)
+    is_active: Optional[bool] = None
+
+
+class TrendingItemCreate(BaseModel):
+    item_id: str = Field(..., min_length=1, max_length=100, description="Unique item identifier")
+    item_type: str = Field(..., pattern=r"^(repo|topic)$", description="Type: repo or topic")
+    name: str = Field(..., min_length=1, max_length=200, description="Item name")
+    stars: str = Field(default="", max_length=50, description="Star count")
+    forks: str = Field(default="", max_length=50, description="Fork count")
+    growth: str = Field(default="", max_length=100, description="Growth rate")
+    category: str = Field(default="", max_length=100, description="Category")
+    desc: str = Field(default="", description="Description")
+    count: str = Field(default="", max_length=100, description="Item count")
+    url: str = Field(default="", max_length=500, description="URL")
+    is_active: bool = Field(default=True)
+
+
+class TrendingItemUpdate(BaseModel):
+    item_type: Optional[str] = Field(None, pattern=r"^(repo|topic)$")
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    stars: Optional[str] = Field(None, max_length=50)
+    forks: Optional[str] = Field(None, max_length=50)
+    growth: Optional[str] = Field(None, max_length=100)
+    category: Optional[str] = Field(None, max_length=100)
+    desc: Optional[str] = None
+    count: Optional[str] = Field(None, max_length=100)
+    url: Optional[str] = Field(None, max_length=500)
+    is_active: Optional[bool] = None
+
+
+class DashboardMetricCreate(BaseModel):
+    metric_name: str = Field(..., min_length=1, max_length=100, description="Unique metric name")
+    metric_type: str = Field(..., pattern=r"^(sparkline|line|donut|kpi)$", description="Metric type")
+    label: str = Field(default="", max_length=200, description="Display label")
+    value: int = Field(default=0, ge=0, description="Numeric value")
+    color: str = Field(default="#6366f1", max_length=20, description="Hex color")
+    is_active: bool = Field(default=True)
+
+
+class DashboardMetricUpdate(BaseModel):
+    metric_type: Optional[str] = Field(None, pattern=r"^(sparkline|line|donut|kpi)$")
+    label: Optional[str] = Field(None, max_length=200)
+    value: Optional[int] = Field(None, ge=0)
+    color: Optional[str] = Field(None, max_length=20)
+    is_active: Optional[bool] = None
+
+
+class SystemConfigCreate(BaseModel):
+    config_key: str = Field(..., min_length=1, max_length=100, description="Unique config key")
+    config_value: str = Field(default="", description="Config value")
+    config_type: str = Field(default="string", max_length=50, description="Value type")
+    description: str = Field(default="", description="Human-readable description")
+    is_active: bool = Field(default=True)
+
+
+class SystemConfigUpdate(BaseModel):
+    config_value: Optional[str] = None
+    config_type: Optional[str] = Field(None, max_length=50)
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class FrameworkCreate(BaseModel):
+    framework_id: str = Field(..., min_length=1, max_length=100, description="Unique framework identifier")
+    category: str = Field(..., min_length=1, max_length=100, description="Category")
+    name: str = Field(..., min_length=1, max_length=200, description="Framework name")
+    framework: str = Field(default="", max_length=200, description="Underlying framework")
+    runtime: str = Field(default="", max_length=200, description="Runtime")
+    maturity: str = Field(default="", max_length=100, description="Maturity level")
+    maturity_color: str = Field(default="#6366f1", max_length=20, description="Hex color")
+    tagline: str = Field(default="", description="Tagline")
+    key_features: List[str] = Field(default_factory=list, description="Key features")
+    best_for: str = Field(default="", description="Best fit use case")
+    docs_url: str = Field(default="", max_length=500, description="Documentation URL")
+    is_active: bool = Field(default=True)
+
+
+class FrameworkUpdate(BaseModel):
+    category: Optional[str] = Field(None, min_length=1, max_length=100)
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    framework: Optional[str] = Field(None, max_length=200)
+    runtime: Optional[str] = Field(None, max_length=200)
+    maturity: Optional[str] = Field(None, max_length=100)
+    maturity_color: Optional[str] = Field(None, max_length=20)
+    tagline: Optional[str] = None
+    key_features: Optional[List[str]] = None
+    best_for: Optional[str] = None
+    docs_url: Optional[str] = Field(None, max_length=500)
+    is_active: Optional[bool] = None
+
 __all__ = [
 
     "AgentRunRequest",
@@ -630,5 +751,25 @@ __all__ = [
     "ProblemCategoriesResponse",
 
     "ProblemSourcesResponse",
+
+    "TechResourceCreate",
+
+    "TechResourceUpdate",
+
+    "TrendingItemCreate",
+
+    "TrendingItemUpdate",
+
+    "DashboardMetricCreate",
+
+    "DashboardMetricUpdate",
+
+    "SystemConfigCreate",
+
+    "SystemConfigUpdate",
+
+    "FrameworkCreate",
+
+    "FrameworkUpdate",
 
 ]
