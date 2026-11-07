@@ -5,16 +5,11 @@ import { fetchConfig } from "../services/api"
 
 export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
   const [config, setConfig] = useState(null)
-
-  const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem("ai_brainstorm_history")
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch {}
-    }
-    return []
-  })
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState("")
+  const [isSending, setIsSending] = useState(false)
+  const [mode, setMode] = useState("agent")
+  const messagesEndRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -23,7 +18,6 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
         const res = await fetchConfig("brainstorm_welcome_message")
         if (!cancelled && res.value) {
           setConfig(res.value)
-          // Seed welcome message if history is empty
           if (messages.length === 0) {
             setMessages([
               {
@@ -43,11 +37,6 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
     loadConfig()
     return () => { cancelled = true }
   }, [])
-
-  const [input, setInput] = useState("")
-  const [isSending, setIsSending] = useState(false)
-  const [mode, setMode] = useState("agent") // 'agent' or 'orchestrate'
-  const messagesEndRef = useRef(null)
 
   useEffect(() => {
     if (initialQuery) {
@@ -137,7 +126,7 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
       {/* Header bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-bright)", display: "flex", alignItems: "center", gap: 10 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--color-foreground)", display: "flex", alignItems: "center", gap: 10 }}>
             <SparklesIcon size={22} color="var(--accent-purple-light)" />
             <span>Interactive Research Brainstorming</span>
           </h2>
@@ -148,7 +137,7 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {/* Mode Switcher */}
-          <div style={{ display: "flex", background: "var(--bg-card)", padding: 3, borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
+          <div style={{ display: "flex", background: "var(--bg-card)", padding: 3, borderRadius: "--radius-md", border: "1px solid var(--color-border)" }}>
             <button
               onClick={() => setMode("agent")}
               style={{
@@ -156,10 +145,11 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
                 color: mode === "agent" ? "#ffffff" : "var(--text-dim)",
                 border: "none",
                 padding: "5px 12px",
-                borderRadius: 6,
+                borderRadius: "--radius-sm",
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
+                minHeight: 44,
               }}
             >
               Single Agent
@@ -171,10 +161,11 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
                 color: mode === "orchestrate" ? "#ffffff" : "var(--text-dim)",
                 border: "none",
                 padding: "5px 12px",
-                borderRadius: 6,
+                borderRadius: "--radius-sm",
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
+                minHeight: 44,
               }}
             >
               Multi-Specialist
@@ -236,7 +227,7 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
                 style={{
                   maxWidth: "80%",
                   padding: "14px 18px",
-                  borderRadius: 16,
+                  borderRadius: isUser ? 16 : 16,
                   borderTopRightRadius: isUser ? 4 : 16,
                   borderTopLeftRadius: !isUser ? 4 : 16,
                   background: isUser
@@ -248,8 +239,8 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
                     ? "1px solid rgba(124, 58, 237, 0.4)"
                     : m.isError
                     ? "1px solid rgba(244, 63, 94, 0.4)"
-                    : "1px solid var(--border-subtle)",
-                  color: isUser ? "#ffffff" : m.isError ? "var(--accent-rose)" : "var(--text-main)",
+                    : "1px solid var(--color-border)",
+                  color: isUser ? "#ffffff" : m.isError ? "var(--accent-rose)" : "var(--color-foreground)",
                   fontSize: 13.5,
                   lineHeight: 1.6,
                   whiteSpace: "pre-wrap",
@@ -258,9 +249,9 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
               >
                 {m.content}
               </div>
-            </div>
-          )
-        })}
+              </div>
+            )
+          })}
 
         {isSending && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--accent-cyan)", fontSize: 13 }}>
@@ -283,8 +274,8 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
           alignItems: "center",
           gap: 10,
           background: "var(--bg-card)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: 14,
+          border: "1px solid var(--color-border)",
+          borderRadius: "--radius-lg",
           padding: "8px 12px",
         }}
       >
@@ -298,7 +289,7 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
             background: "transparent",
             border: "none",
             outline: "none",
-            color: "var(--text-main)",
+            color: "var(--color-foreground)",
             fontSize: 13.5,
             padding: "6px 8px",
           }}
@@ -312,6 +303,7 @@ export function Brainstorming({ initialQuery = "", onGenerateFeasibility }) {
           style={{
             padding: "8px 18px",
             opacity: isSending || !input.trim() ? 0.5 : 1,
+            minHeight: 44,
           }}
         >
           <span>Send</span>

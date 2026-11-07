@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React from "react"
 import {
   BrainIcon,
   HomeIcon,
@@ -43,15 +43,17 @@ export const NAV_ITEMS = [
 export function Sidebar({ currentTab, onSelectTab, healthData }) {
   const isOnline = healthData?.ollama_available ?? true
   const modelName = healthData?.ollama_model || "qwen2.5:14b"
-  const [sidebarSparkline, setSidebarSparkline] = useState([10, 12, 14, 18, 16, 20, 24, 22, 28])
+  const [sidebarMetrics, setSidebarMetrics] = React.useState([
+    10, 12, 14, 18, 16, 20, 24, 22, 28,
+  ])
 
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false
     const load = async () => {
       try {
         const res = await fetchDashboardMetrics("sparkline")
         if (!cancelled && res.items && res.items.length > 0) {
-          setSidebarSparkline(res.items.map((m) => m.value))
+          setSidebarMetrics(res.items.map((m) => m.value))
         }
       } catch (err) {
         console.warn("Sidebar sparkline load failed:", err)
@@ -62,7 +64,7 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
   }, [])
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="Main navigation">
       {/* Brand Header */}
       <div
         style={{
@@ -70,17 +72,17 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
           alignItems: "center",
           gap: 12,
           padding: "8px 4px 24px 4px",
-          borderBottom: "1px solid var(--border-subtle)",
-          marginBottom: 16,
+          borderBottom: `1px solid var(--color-border)`,
+          marginBottom: "var(--space-6)",
         }}
       >
         <div
           style={{
             width: 42,
             height: 42,
-            borderRadius: 12,
+            borderRadius: "var(--radius-md)",
             background: "linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(0, 240, 255, 0.3) 100%)",
-            border: "1px solid rgba(139, 92, 246, 0.5)",
+            border: `1px solid rgba(139, 92, 246, 0.5)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -94,7 +96,7 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
             style={{
               fontSize: 15,
               fontWeight: 700,
-              color: "var(--text-bright)",
+              color: "var(--color-foreground)",
               letterSpacing: -0.2,
               lineHeight: 1.2,
             }}
@@ -104,7 +106,7 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
           <span
             style={{
               fontSize: 11,
-              color: "var(--text-dim)",
+              color: "var(--text-muted)",
               fontWeight: 400,
             }}
           >
@@ -122,6 +124,7 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
           gap: 4,
           overflowY: "auto",
         }}
+        aria-label="Navigation"
       >
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
@@ -135,8 +138,8 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                padding: "9px 12px",
-                borderRadius: 10,
+                padding: `var(--space-3) var(--space-4)`,
+                borderRadius: "var(--radius-md)",
                 border: "none",
                 background: isActive
                   ? "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)"
@@ -149,6 +152,7 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
                 transition: "all 0.15s ease",
                 boxShadow: isActive ? "0 0 16px rgba(124, 58, 237, 0.45)" : "none",
                 width: "100%",
+                minHeight: 44, /* touch target */
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
@@ -175,7 +179,7 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
         className="glass-panel"
         style={{
           padding: 12,
-          borderRadius: 12,
+          borderRadius: "var(--radius-lg)",
           marginTop: 12,
           background: "rgba(10, 15, 28, 0.8)",
         }}
@@ -187,22 +191,22 @@ export function Sidebar({ currentTab, onSelectTab, healthData }) {
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                background: isOnline ? "var(--accent-emerald)" : "var(--accent-rose)",
-                boxShadow: isOnline ? "0 0 8px #10b981" : "0 0 8px #f43f5e",
+                background: isOnline ? "var(--color-accent)" : "var(--color-destructive)",
+                boxShadow: isOnline ? "0 0 8px #22c55e" : "0 0 8px #ef4444",
               }}
             />
-            <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--text-main)" }}>
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--color-foreground)" }}>
               {isOnline ? "System Online" : "System Offline"}
             </span>
           </div>
           <span style={{ fontSize: 10, color: "var(--text-muted)" }}>Ollama</span>
         </div>
-        <div style={{ fontSize: 10.5, color: "var(--text-dim)", marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div style={{ fontSize: 10.5, color: "var(--text-muted)", marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {modelName}
         </div>
         <Sparkline
-          data={sidebarSparkline}
-          color={isOnline ? "#10b981" : "#f43f5e"}
+          data={sidebarMetrics}
+          color={isOnline ? "#10b981" : "#ef4444"}
           width={190}
           height={26}
         />

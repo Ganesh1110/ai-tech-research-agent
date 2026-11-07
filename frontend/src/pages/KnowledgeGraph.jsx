@@ -50,7 +50,7 @@ export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-bright)", display: "flex", alignItems: "center", gap: 10 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--color-foreground)", display: "flex", alignItems: "center", gap: 10 }}>
           <GraphIcon size={22} color="var(--accent-cyan)" />
           <span>Knowledge Graph & Cross-Entity Explorer</span>
         </h2>
@@ -67,7 +67,7 @@ export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
           position: "relative",
           overflow: "hidden",
           background: "radial-gradient(circle at 50% 50%, rgba(13, 20, 38, 0.9) 0%, rgba(7, 9, 14, 0.95) 100%)",
-          border: "1px solid var(--border-subtle)",
+          border: "1px solid var(--color-border)",
         }}
       >
         {graphLoading ? (
@@ -139,7 +139,7 @@ export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
 
       {/* Semantic KB Retrieval Exploration */}
       <div className="glass-panel" style={{ padding: "24px" }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-bright)", marginBottom: 12 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--color-foreground)", marginBottom: 12 }}>
           Semantic Query Explorer
         </h3>
 
@@ -151,8 +151,8 @@ export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
               alignItems: "center",
               gap: 8,
               background: "var(--bg-input)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 10,
+              border: "1px solid var(--color-border)",
+              borderRadius: "--radius-md",
               padding: "8px 14px",
               minWidth: 260,
             }}
@@ -167,7 +167,7 @@ export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
                 background: "transparent",
                 border: "none",
                 outline: "none",
-                color: "var(--text-main)",
+                color: "var(--color-foreground)",
                 fontSize: 13,
                 width: "100%",
               }}
@@ -187,7 +187,7 @@ export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
                 key={i}
                 style={{
                   background: "rgba(255, 255, 255, 0.02)",
-                  border: "1px solid var(--border-subtle)",
+                  border: "1px solid var(--color-border)",
                   borderRadius: 12,
                   padding: "16px",
                   display: "flex",
@@ -205,7 +205,7 @@ export function KnowledgeGraph({ kbStatsData, onSelectNode }) {
                     </span>
                   )}
                 </div>
-                <h4 style={{ fontSize: 14, fontWeight: 600, color: "var(--text-bright)" }}>
+                <h4 style={{ fontSize: 14, fontWeight: 600, color: "var(--color-foreground)" }}>
                   {r.title}
                 </h4>
                 <p style={{ fontSize: 12, color: "var(--text-dim)", lineHeight: 1.5 }}>

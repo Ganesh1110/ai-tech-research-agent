@@ -17,9 +17,9 @@ export function Header({
           display: "flex",
           alignItems: "center",
           gap: 10,
-          background: "rgba(13, 19, 34, 0.85)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: 12,
+          background: "rgba(13, 23, 42, 0.85)",
+          border: `1px solid var(--color-border)`,
+          borderRadius: "var(--radius-md)",
           padding: "8px 14px",
           width: "420px",
           maxWidth: "45%",
@@ -36,7 +36,7 @@ export function Header({
             background: "transparent",
             border: "none",
             outline: "none",
-            color: "var(--text-main)",
+            color: "var(--color-foreground)",
             fontSize: 13,
             width: "100%",
           }}
@@ -56,28 +56,29 @@ export function Header({
               ? "rgba(16, 185, 129, 0.12)"
               : "rgba(244, 63, 94, 0.12)",
             border: `1px solid ${isSchedulerRunning ? "rgba(16, 185, 129, 0.3)" : "rgba(244, 63, 94, 0.3)"}`,
-            borderRadius: 20,
+            borderRadius: "var(--radius-full)",
             padding: "5px 12px",
-            color: isSchedulerRunning ? "var(--accent-emerald)" : "var(--accent-rose)",
+            color: isSchedulerRunning ? "var(--color-accent)" : "var(--accent-rose)",
             fontSize: 12,
             fontWeight: 600,
             cursor: "pointer",
             transition: "all 0.2s ease",
+            minHeight: 44, /* touch target */
+            title: isSchedulerRunning ? "Click to stop scheduler" : "Click to start autonomous scheduler",
           }}
-          title={isSchedulerRunning ? "Click to stop scheduler" : "Click to start autonomous scheduler"}
         >
           <span
             style={{
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: isSchedulerRunning ? "var(--accent-emerald)" : "var(--accent-rose)",
-              boxShadow: isSchedulerRunning ? "0 0 8px #10b981" : "0 0 8px #f43f5e",
+              background: isSchedulerRunning ? "var(--color-accent)" : "var(--accent-rose)",
+              boxShadow: isSchedulerRunning ? "0 0 8px #22c55e" : "0 0 8px #f43f5e",
             }}
           />
           <span>{isSchedulerRunning ? "Autonomous Research Active" : "Scheduler Paused"}</span>
           {isSchedulerRunning ? (
-            <SquareIcon size={10} color="var(--accent-emerald)" />
+            <SquareIcon size={10} color="var(--color-accent)" />
           ) : (
             <PlayIcon size={10} color="var(--accent-rose)" />
           )}
@@ -91,15 +92,15 @@ export function Header({
               alignItems: "center",
               gap: 6,
               background: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 20,
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-full)",
               padding: "5px 12px",
               fontSize: 12,
               color: "var(--text-dim)",
             }}
           >
             <ClockIcon size={13} color="var(--accent-cyan)" />
-            <span>Next scan: <strong style={{ color: "var(--text-main)" }}>{nextScanCountdown}</strong></span>
+            <span>Next scan: <strong style={{ color: "var(--color-foreground)" }}>{nextScanCountdown}</strong></span>
           </div>
         )}
 
@@ -109,9 +110,9 @@ export function Header({
             position: "relative",
             width: 36,
             height: 36,
-            borderRadius: 10,
+            borderRadius: "var(--radius-md)",
             background: "rgba(255, 255, 255, 0.04)",
-            border: "1px solid var(--border-subtle)",
+            border: "1px solid var(--color-border)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -155,7 +156,7 @@ export function Header({
             style={{
               width: 34,
               height: 34,
-              borderRadius: "50%",
+              borderRadius: "var(--radius-full)",
               background: "linear-gradient(135deg, #7c3aed 0%, #00f0ff 100%)",
               display: "flex",
               alignItems: "center",
@@ -172,7 +173,7 @@ export function Header({
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: "var(--text-main)",
+              color: "var(--color-foreground)",
               display: "none",
             }}
             className="user-name"

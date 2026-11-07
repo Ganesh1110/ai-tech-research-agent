@@ -10,7 +10,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [page, setPage] = useState(1)
-  const PAGE_SIZE = 12
+  const PAGE_SIZE = 8
 
   useEffect(() => {
     let cancelled = false
@@ -76,7 +76,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40, color: "var(--text-dim)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <div style={{ width: 20, height: 20, border: "2px solid var(--border-subtle)", borderTopColor: "var(--accent-purple-light)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ width: 20, height: 20, border: "2px solid var(--color-border)", borderTopColor: "var(--accent-purple-light)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <span>Loading frameworks directory…</span>
         </div>
       </div>
@@ -95,13 +95,14 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
               style={{
                 background: selectedCategory === cat ? "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)" : "rgba(255, 255, 255, 0.04)",
                 color: selectedCategory === cat ? "#ffffff" : "var(--text-dim)",
-                border: selectedCategory === cat ? "1px solid rgba(124, 58, 237, 0.4)" : "1px solid var(--border-subtle)",
-                borderRadius: 10,
+                border: selectedCategory === cat ? "1px solid rgba(124, 58, 237, 0.4)" : "1px solid var(--color-border)",
+                borderRadius: "var(--radius-full)",
                 padding: "6px 14px",
                 fontSize: 12.5,
                 fontWeight: 600,
                 cursor: "pointer",
                 transition: "all 0.15s ease",
+                minHeight: 36,
               }}
             >
               {cat === "all" ? "All Technologies" : cat}
@@ -115,9 +116,9 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
             display: "flex",
             alignItems: "center",
             gap: 8,
-            background: "var(--bg-input)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 10,
+            background: "rgba(13, 23, 42, 0.85)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-md)",
             padding: "7px 12px",
           }}
         >
@@ -131,7 +132,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
               background: "transparent",
               border: "none",
               outline: "none",
-              color: "var(--text-main)",
+              color: "var(--color-foreground)",
               fontSize: 12.5,
               width: 220,
             }}
@@ -150,11 +151,11 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
           gap: 18,
         }}
       >
-        {filtered.map((item) => (
+        {frameworks.map((item) => (
           <div
             key={item.id}
             className="glass-panel"
@@ -164,6 +165,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
               flexDirection: "column",
               justifyContent: "space-between",
               gap: 14,
+              cursor: "default",
             }}
           >
             <div>
@@ -197,7 +199,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
                 </span>
               </div>
 
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text-bright)", marginBottom: 2 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--color-foreground)", marginBottom: 2 }}>
                 {item.name}
               </h3>
               <div style={{ fontSize: 12, color: "var(--accent-cyan)", marginBottom: 10 }}>
@@ -215,7 +217,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {item.keyFeatures.map((feat, idx) => (
-                    <div key={idx} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-main)" }}>
+                    <div key={idx} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--color-foreground)" }}>
                       <span style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--accent-cyan)" }} />
                       <span>{feat}</span>
                     </div>
@@ -227,14 +229,14 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
               <div
                 style={{
                   background: "rgba(255, 255, 255, 0.02)",
-                  border: "1px solid var(--border-subtle)",
+                  border: "1px solid var(--color-border)",
                   borderRadius: 8,
                   padding: "8px 10px",
                   fontSize: 11.5,
                   color: "var(--text-dim)",
                 }}
               >
-                <strong style={{ color: "var(--text-bright)" }}>Best Fit:</strong> {item.bestFor}
+                <strong style={{ color: "var(--color-foreground)" }}>Best Fit:</strong> {item.bestFor}
               </div>
             </div>
 
@@ -244,7 +246,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                borderTop: "1px solid var(--border-subtle)",
+                borderTop: "1px solid var(--color-border)",
                 paddingTop: 14,
                 marginTop: 6,
               }}
@@ -255,7 +257,7 @@ export function TechFrameworksDirectory({ onBrainstormWithFramework }) {
                   background: "linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%)",
                   border: "1px solid rgba(139, 92, 246, 0.4)",
                   color: "var(--accent-purple-light)",
-                  borderRadius: 8,
+                  borderRadius: "var(--radius-md)",
                   padding: "6px 12px",
                   fontSize: 12,
                   fontWeight: 600,
