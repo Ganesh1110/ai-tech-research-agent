@@ -2033,9 +2033,21 @@ def get_idea_vault_items(
     """Fetch ideas from the founder Idea Vault, seeding starter ideas if empty."""
     with SessionLocal() as db:
         service = IdeaValidationService()
-        ideas = service.get_or_seed_ideas(db)
+        all_ideas = service.get_or_seed_ideas(db)
+        total_all = len(all_ideas)
+        status_counts = {
+            "all": total_all,
+            "draft": sum(1 for i in all_ideas if i.status == "draft"),
+            "validated": sum(1 for i in all_ideas if i.status == "validated"),
+            "promoted": sum(1 for i in all_ideas if i.status == "promoted"),
+            "pivoted": sum(1 for i in all_ideas if i.status == "pivoted"),
+        }
+        scored = [i for i in all_ideas if i.validation_score is not None and i.validation_score > 0]
+        avg_score = round(sum(i.validation_score for i in scored) / len(scored)) if scored else 0
+
+        ideas = all_ideas
         if status:
-            ideas = [i for i in ideas if i.status == status]
+            ideas = [i for i in all_ideas if i.status == status]
 
         total = len(ideas)
         paginated = ideas[offset : offset + limit]
@@ -2059,6 +2071,10 @@ def get_idea_vault_items(
                 for i in paginated
             ],
             total=total,
+            stats={
+                **status_counts,
+                "avg_score": avg_score,
+            },
         )
 
 

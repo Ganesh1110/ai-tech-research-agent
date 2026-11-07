@@ -74,19 +74,29 @@ export default function ProblemRadar({ onNavigate }) {
     return () => { cancelled = true }
   }, [])
 
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat)
+    setPage(1)
+  }
+
+  const handleSourceChange = (src) => {
+    setSelectedSource(src)
+    setPage(1)
+  }
+
   useEffect(() => {
     loadProblems()
   }, [selectedCategory, selectedSource, page])
 
-  async function loadProblems() {
+  async function loadProblems(targetPage = page, targetCat = selectedCategory, targetSrc = selectedSource) {
     setLoading(true)
     setError(null)
     try {
       const data = await fetchProblems({
-        category: selectedCategory,
-        source: selectedSource,
+        category: targetCat,
+        source: targetSrc,
         limit: PAGE_SIZE,
-        offset: (page - 1) * PAGE_SIZE,
+        offset: (targetPage - 1) * PAGE_SIZE,
       })
       setProblems(data.problems || [])
       setTotalProblems(data.total || 0)
@@ -100,8 +110,16 @@ export default function ProblemRadar({ onNavigate }) {
   async function handleScan() {
     setScanning(true)
     try {
-      const data = await scanProblems(15)
-      setProblems(data.problems || [])
+      await scanProblems(15)
+      // Refresh dynamic filter options from DB and reset to page 1
+      const [cats, srcs] = await Promise.all([
+        fetchProblemCategories(),
+        fetchProblemSources(),
+      ])
+      setDbCategories(cats.categories || [])
+      setDbSources(srcs.sources || [])
+      setPage(1)
+      await loadProblems(1, selectedCategory, selectedSource)
     } catch (err) {
       alert("Radar scan failed: " + err.message)
     } finally {
@@ -131,12 +149,13 @@ export default function ProblemRadar({ onNavigate }) {
         sentiment_quotes: quotesArray,
       }
 
-      const created = await createProblem(payload)
-      setProblems([created, ...problems])
+      await createProblem(payload)
       setFormTitle("")
       setFormDesc("")
       setFormQuotes("")
       setShowAddModal(false)
+      setPage(1)
+      await loadProblems(1, selectedCategory, selectedSource)
     } catch (err) {
       alert("Failed to save pain point: " + err.message)
     } finally {
@@ -448,7 +467,7 @@ export default function ProblemRadar({ onNavigate }) {
         {categories.map((cat) => (
           <button
             key={cat}
-            onClick={() => setSelectedCategory(cat)}
+            onClick={() => handleCategoryChange(cat)}
             style={{
               padding: "5px 12px",
               borderRadius: 20,
@@ -476,7 +495,7 @@ export default function ProblemRadar({ onNavigate }) {
           return (
             <button
               key={src}
-              onClick={() => setSelectedSource(src)}
+              onClick={() => handleSourceChange(src)}
               style={{
                 display: "flex",
                 alignItems: "center",

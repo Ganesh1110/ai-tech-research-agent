@@ -32,6 +32,14 @@ export default function IdeaVault({ onNavigate }) {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 10
+  const [ideaStats, setIdeaStats] = useState({
+    all: 0,
+    draft: 0,
+    validated: 0,
+    promoted: 0,
+    pivoted: 0,
+    avg_score: 0,
+  })
 
   // Form state
   const [formTitle, setFormTitle] = useState("")
@@ -42,17 +50,25 @@ export default function IdeaVault({ onNavigate }) {
   const [formTags, setFormTags] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
+  const handleFilterStatusChange = (st) => {
+    setFilterStatus(st)
+    setPage(1)
+  }
+
   useEffect(() => {
     loadIdeas()
   }, [filterStatus, page])
 
-  async function loadIdeas() {
+  async function loadIdeas(targetPage = page, targetFilter = filterStatus) {
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchIdeas(filterStatus === "all" ? "" : filterStatus, PAGE_SIZE, (page - 1) * PAGE_SIZE)
+      const data = await fetchIdeas(targetFilter === "all" ? "" : targetFilter, PAGE_SIZE, (targetPage - 1) * PAGE_SIZE)
       setIdeas(data.ideas || [])
       setTotalIdeas(data.total || 0)
+      if (data.stats) {
+        setIdeaStats(data.stats)
+      }
     } catch (err) {
       setError(err.message || "Failed to load ideas from Idea Vault")
     } finally {
@@ -80,8 +96,7 @@ export default function IdeaVault({ onNavigate }) {
         tags: tagsArray,
       }
 
-      const created = await createIdea(payload)
-      setIdeas([created, ...ideas])
+      await createIdea(payload)
       setFormTitle("")
       setFormProblem("")
       setFormSolution("")
@@ -89,6 +104,8 @@ export default function IdeaVault({ onNavigate }) {
       setFormMonetization("")
       setFormTags("")
       setShowCreateForm(false)
+      setPage(1)
+      await loadIdeas(1, filterStatus)
     } catch (err) {
       alert("Failed to save idea: " + err.message)
     } finally {
@@ -102,6 +119,8 @@ export default function IdeaVault({ onNavigate }) {
       const updated = await validateIdea(id)
       setIdeas(ideas.map((item) => (item.id === id ? updated : item)))
       setExpandedIdeaId(id)
+      // Refresh global stats silently
+      loadIdeas(page, filterStatus)
     } catch (err) {
       alert("Validation failed: " + err.message)
     } finally {
@@ -116,6 +135,7 @@ export default function IdeaVault({ onNavigate }) {
       setIdeas(
         ideas.map((item) => (item.id === id ? { ...item, status: "promoted" } : item))
       )
+      loadIdeas(page, filterStatus)
       if (onNavigate) {
         if (confirm("Idea promoted to Startup Opportunity! Jump to Startup Studio now?")) {
           onNavigate("startup-studio")
@@ -132,24 +152,21 @@ export default function IdeaVault({ onNavigate }) {
     if (!confirm("Are you sure you want to delete this idea?")) return
     try {
       await deleteIdea(id)
-      setIdeas(ideas.filter((i) => i.id !== id))
+      const targetPage = ideas.length === 1 && page > 1 ? page - 1 : page
+      setPage(targetPage)
+      await loadIdeas(targetPage, filterStatus)
     } catch (err) {
       alert("Failed to delete idea: " + err.message)
     }
   }
 
-  const filteredIdeas = ideas.filter((item) => {
-    if (filterStatus === "all") return true
-    return item.status === filterStatus
-  })
+  const filteredIdeas = ideas
 
   // KPI Calculations
-  const totalCount = totalIdeas
-  const validatedCount = ideas.filter((i) => i.status === "validated").length
-  const promotedCount = ideas.filter((i) => i.status === "promoted").length
-  const avgScore = totalCount > 0
-    ? Math.round(ideas.reduce((acc, curr) => acc + (curr.validation_score || 0), 0) / ideas.length)
-    : 0
+  const totalCount = ideaStats.all || totalIdeas
+  const validatedCount = ideaStats.validated || 0
+  const promotedCount = ideaStats.promoted || 0
+  const avgScore = ideaStats.avg_score || 0
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -425,7 +442,7 @@ export default function IdeaVault({ onNavigate }) {
         {["all", "draft", "validated", "promoted", "pivoted"].map((st) => (
           <button
             key={st}
-            onClick={() => setFilterStatus(st)}
+            onClick={() => handleFilterStatusChange(st)}
             style={{
               padding: "6px 14px",
               borderRadius: 20,
@@ -438,7 +455,7 @@ export default function IdeaVault({ onNavigate }) {
               border: "1px solid var(--border, #334155)",
             }}
           >
-            {st} ({st === "all" ? ideas.length : ideas.filter((i) => i.status === st).length})
+            {st} ({ideaStats[st] ?? (st === "all" ? totalIdeas : 0)})
           </button>
         ))}
       </div>

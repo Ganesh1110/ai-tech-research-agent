@@ -455,6 +455,7 @@ class IdeaVaultItemResponse(BaseModel):
 class IdeaVaultItemListResponse(BaseModel):
     ideas: List[IdeaVaultItemResponse]
     total: int
+    stats: Optional[Dict[str, Any]] = None
 
 
 class CreateIdeaRequest(BaseModel):

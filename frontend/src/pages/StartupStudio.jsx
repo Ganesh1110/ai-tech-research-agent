@@ -29,14 +29,24 @@ export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 10
 
-  const loadOpportunities = useCallback(async () => {
+  const handleStatusFilterChange = (val) => {
+    setStatusFilter(val)
+    setPage(1)
+  }
+
+  const handleMinScoreChange = (val) => {
+    setMinScore(val)
+    setPage(1)
+  }
+
+  const loadOpportunities = useCallback(async (targetPage = page) => {
     setIsLoading(true)
     try {
       const res = await getStartupOpportunities({
         status: statusFilter === "all" ? null : statusFilter,
         min_score: minScore > 0 ? minScore : null,
         limit: PAGE_SIZE,
-        offset: (page - 1) * PAGE_SIZE,
+        offset: (targetPage - 1) * PAGE_SIZE,
       })
       if (res && res.items) {
         setOpportunities(res.items)
@@ -50,7 +60,6 @@ export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }
   }, [statusFilter, minScore, page])
 
   useEffect(() => {
-    setPage(1)
     loadOpportunities()
   }, [loadOpportunities])
 
@@ -60,7 +69,8 @@ export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }
     try {
       const res = await scanStartupOpportunities(8, 60)
       setStatusMessage(`Scan complete: identified ${res.total || res.items?.length || 0} opportunities.`)
-      await loadOpportunities()
+      setPage(1)
+      await loadOpportunities(1)
     } catch (err) {
       setStatusMessage(`Scan failed: ${err.message}`)
     } finally {
@@ -263,7 +273,7 @@ export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }
             <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Status:</span>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
               style={{
                 background: "var(--bg-secondary)",
                 color: "var(--text-primary)",
@@ -290,7 +300,7 @@ export function StartupStudio({ onNavigateToBrainstorm, onNavigateToProductLab }
               max="95"
               step="5"
               value={minScore}
-              onChange={(e) => setMinScore(Number(e.target.value))}
+              onChange={(e) => handleMinScoreChange(Number(e.target.value))}
               style={{ width: 100 }}
             />
             <span style={{ fontSize: 13, color: "var(--text-primary)", minWidth: 28 }}>
